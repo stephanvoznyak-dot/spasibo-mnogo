@@ -6,130 +6,119 @@
 
 ## Требования
 
-- macOS с установленным **Xcode** (актуальная стабильная версия; для Capacitor 8 — Xcode 26.0+)
-- Xcode Command Line Tools (`xcode-select --install`)
-- Apple ID (для симулятора достаточно; для устройства и App Store — Apple Developer Program)
+- macOS с установленным **Xcode** (для Capacitor 8 — **Xcode 26.0+**)
+- Xcode Command Line Tools: `xcode-select --install`
+- Apple ID (симулятор) или Apple Developer Program (устройство / App Store)
 - Node.js 20+ и npm
 
 С Capacitor 8 по умолчанию используется **Swift Package Manager (SPM)**. CocoaPods не обязателен.
 
-## Быстрый старт (первый раз)
+## Рекомендуемый способ (без ошибок в Xcode)
+
+Одна команда выполняет сборку веб-активов, добавление платформы iOS, прописывание разрешений камеры в Info.plist и синхронизацию:
 
 ```bash
 git clone https://github.com/stephanvoznyak-dot/spasibo-mnogo.git
 cd spasibo-mnogo
 npm install
-
-# Добавить платформу iOS (создаёт папку ios/)
-npx cap add ios
-
-# Собрать веб-активы и синхронизировать
-npm run build:standalone
-npx cap sync ios
-
-# Открыть в Xcode
+npm run setup:ios
 npx cap open ios
 ```
 
-После `npx cap add ios` в корне проекта появится папка `ios/`.
+Скрипт `scripts/setup-ios.mjs`:
 
-### Если нужен CocoaPods вместо SPM
+1. Проверяет наличие `@capacitor/ios`
+2. Запускает `build:standalone` → заполняет `android-www/` (в т.ч. `index.html`)
+3. При отсутствии папки `ios/` выполняет `npx cap add ios`
+4. Автоматически добавляет в Info.plist:
+   - `NSCameraUsageDescription`
+   - `NSPhotoLibraryUsageDescription`
+   - `NSPhotoLibraryAddUsageDescription`
+5. Выполняет `npx cap sync ios`
+
+После открытия Xcode остаётся **только** выбрать Team в Signing & Capabilities.
+
+## Ручной способ (эквивалент)
+
+```bash
+npm install
+npx cap add ios
+npm run build:standalone
+npx cap sync ios
+# затем вручную добавить ключи камеры в Info.plist
+npx cap open ios
+```
+
+### CocoaPods вместо SPM
 
 ```bash
 npx cap add ios --packagemanager CocoaPods
 cd ios/App && pod install && cd ../..
-npx cap open ios
+npm run setup:ios   # или cap sync после build:standalone
+npx cap open ios    # откроет App.xcworkspace
 ```
 
-При использовании CocoaPods открывайте **App.xcworkspace**, а не `.xcodeproj`.
-
-## Последующие сборки
+## Повторные сборки
 
 ```bash
-npm run build:standalone
-npx cap sync ios
-npx cap open ios
-```
-
-Или скриптами из package.json:
-
-```bash
+npm run setup:ios
+# или только обновление веб-части:
 npm run cap:sync:ios
-npm run cap:open:ios
+npx cap open ios
 ```
 
-## Настройки в Xcode (обязательно)
+## Настройки в Xcode (единственный ручной шаг)
 
-1. Откройте проект через `npx cap open ios` (или вручную `ios/App/App.xcodeproj` при SPM / `ios/App/App.xcworkspace` при CocoaPods).
-2. Выберите target **App** → вкладка **Signing & Capabilities**:
-   - Team — ваша команда разработчика
-   - Bundle Identifier — `org.normalproject.journal` (или свой уникальный)
-3. Вкладка **General**:
-   - Display Name: `Спасибо много`
-   - Minimum Deployments: iOS 15.0 или выше
-4. **Info.plist** (или Info tab) — добавьте разрешение камеры:
+1. Target **App** → **Signing & Capabilities**
+   - Team — ваша команда
+   - Bundle Identifier — `org.normalproject.journal` (или свой)
+2. **General** → Minimum Deployments: **iOS 15.0+**
+3. Display Name уже «Спасибо много»
 
-```xml
-<key>NSCameraUsageDescription</key>
-<string>Приложению требуется доступ к камере для сканирования QR-кодов актов обязательств.</string>
-```
-
-Без этого ключа камера не будет работать, и приложение может быть отклонено при публикации в App Store.
+Разрешения камеры в Info.plist выставляет `setup:ios` — вручную добавлять не нужно.
 
 ## Запуск
 
-- **Симулятор**: выберите любой iPhone в списке устройств и нажмите ▶ Run.
-- **Физический iPhone**:
-  1. Подключите устройство кабелем.
-  2. На iPhone: Настройки → Основные → VPN и управление устройством → доверьте компьютеру.
-  3. В Xcode выберите ваше устройство и запустите.
+- **Симулятор**: iPhone в списке устройств → ▶ Run
+- **Устройство**: кабель → доверие на iPhone → выбрать устройство → Run
 
-## Публикация в App Store
+## Публикация
 
-1. В Xcode: Product → Archive.
-2. После успешного архива откроется Organizer.
-3. Distribute App → App Store Connect.
-4. Заполните метаданные в App Store Connect (скриншоты, описание, возрастной рейтинг).
-5. Отправьте на проверку.
+Product → Archive → Distribute App → App Store Connect / TestFlight.
 
-Для TestFlight достаточно загрузить билд через Organizer.
+## Технические замечания
 
-## Важные технические замечания
+| Тема | Как сделано |
+|------|-------------|
+| webDir | `android-www` — общий для Android и iOS, заполняется `build:standalone` |
+| Схема iOS | `capacitor://localhost` (по умолчанию). **Не** ставить `iosScheme: "https"` — WKWebView это запрещает |
+| crypto.subtle | На iOS secure context даёт `capacitor://`. На Android — `androidScheme: "https"` |
+| Плагины | `@capacitor/camera`, `app`, `preferences` уже в package.json |
+| android-www | в `.gitignore` — всегда собирать перед sync |
 
-- `webDir` в `capacitor.config.ts` указывает на `android-www`. Скрипт `build:standalone` заполняет эту папку и создаёт в ней `index.html` — она используется и для iOS.
-- **Схема на iOS**: по умолчанию `capacitor://localhost`. Нельзя задавать `iosScheme: "http"` или `"https"` — WKWebView резервирует эти схемы для удалённых URL, Capacitor молча сбрасывает их обратно на `capacitor`.
-- **crypto.subtle / Web Crypto**: на iOS схема `capacitor://localhost` является secure context. На Android для того же эффекта нужен `androidScheme: "https"` (уже задан).
-- Плагины `@capacitor/camera`, `@capacitor/app`, `@capacitor/preferences` уже в dependencies. После `cap sync` они регистрируются нативно.
-- Приватный ключ и мнемоника никогда не покидают устройство (см. SECURITY.md).
-- Папка `android-www/` в `.gitignore` — её нужно собирать локально перед каждым `cap sync`.
+## Типичные ошибки и решения
 
-## Типичные проблемы
+| Ошибка | Решение |
+|--------|---------|
+| Белый экран | `npm run setup:ios` (нет index.html в webDir) |
+| Missing NSCameraUsageDescription | `npm run setup:ios` (патчит Info.plist) |
+| No such module 'Capacitor' | SPM: открывать `.xcodeproj`; CocoaPods: `.xcworkspace` |
+| Signing failed | Выбрать Team в Xcode |
+| Xcode version too old | Обновить до Xcode 26.0+ |
+| Версии Capacitor разъехались | `@capacitor/core`, `ios`, `cli` — все 8.x |
+| crypto.subtle undefined | Не задавать `iosScheme: "https"`; пересобрать setup:ios |
 
-| Проблема | Решение |
-|----------|---------|
-| `crypto.subtle` is undefined | На iOS обычно не связано со схемой. Пересоберите: `npm run build:standalone && npx cap sync ios`. Убедитесь, что не задан `iosScheme: "https"`. |
-| Камера не открывается | Добавьте `NSCameraUsageDescription` в Info.plist |
-| `No such module 'Capacitor'` | Открывайте правильный файл: `.xcodeproj` (SPM) или `.xcworkspace` (CocoaPods) |
-| Ошибки зависимостей (CocoaPods) | `cd ios/App && pod install --repo-update` |
-| Signing failed | Выберите правильную Team и Bundle Identifier |
-| Белый экран / пустое приложение | Выполните `npm run build:standalone && npx cap sync ios` |
-| Версии Capacitor не совпадают | `@capacitor/core`, `@capacitor/ios` и `@capacitor/cli` должны быть одной мажорной версии (сейчас 8.x) |
-| Xcode слишком старый | Capacitor 8 требует Xcode 26.0+ |
-
-## Структура после добавления iOS
+## Структура после setup:ios
 
 ```
 spasibo-mnogo/
-├── ios/                    ← генерируется `npx cap add ios`
+├── ios/                 ← создаётся автоматически
 │   └── App/
-│       ├── App.xcodeproj   ← SPM (по умолчанию в Capacitor 8)
-│       ├── App.xcworkspace ← только при CocoaPods
-│       └── App/
-│           └── Info.plist
-├── android/
-├── android-www/            ← веб-активы (генерируется build:standalone)
-├── capacitor.config.ts
-└── ...
+│       ├── App.xcodeproj
+│       └── App/Info.plist   ← с ключами камеры
+├── android-www/         ← веб-сборка
+├── scripts/setup-ios.mjs
+└── capacitor.config.ts
 ```
 
-После первого успешного `npx cap add ios` рекомендуется закоммитить папку `ios/` в репозиторий, чтобы другим разработчикам не пришлось выполнять `cap add` заново.
+После первого успешного `setup:ios` папку `ios/` можно закоммитить, чтобы коллегам не выполнять `cap add` повторно.
