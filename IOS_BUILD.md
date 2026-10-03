@@ -6,7 +6,8 @@
 
 ## Требования
 
-- macOS с установленным **Xcode** (актуальная стабильная версия из App Store)
+- macOS с установленным **Xcode** (актуальная стабильная версия; для Capacitor 8 — Xcode 26.0+)
+- Xcode Command Line Tools (`xcode-select --install`)
 - Apple ID (для симулятора достаточно; для устройства и App Store — Apple Developer Program)
 - Node.js 20+ и npm
 
@@ -96,8 +97,9 @@ npm run cap:open:ios
 ## Важные технические замечания
 
 - `webDir` в `capacitor.config.ts` указывает на `android-www`. Скрипт `build:standalone` заполняет эту папку и создаёт в ней `index.html` — она используется и для iOS.
-- `server.iosScheme: "https"` обеспечивает корректную работу `crypto.subtle` и Web Crypto API в WKWebView (аналогично `androidScheme`).
-- Плагины `@capacitor/camera`, `@capacitor/app`, `@capacitor/preferences` уже подключены. После `cap sync` они становятся доступны нативно.
+- **Схема на iOS**: по умолчанию `capacitor://localhost`. Нельзя задавать `iosScheme: "http"` или `"https"` — WKWebView резервирует эти схемы для удалённых URL, Capacitor молча сбрасывает их обратно на `capacitor`.
+- **crypto.subtle / Web Crypto**: на iOS схема `capacitor://localhost` является secure context. На Android для того же эффекта нужен `androidScheme: "https"` (уже задан).
+- Плагины `@capacitor/camera`, `@capacitor/app`, `@capacitor/preferences` уже в dependencies. После `cap sync` они регистрируются нативно.
 - Приватный ключ и мнемоника никогда не покидают устройство (см. SECURITY.md).
 - Папка `android-www/` в `.gitignore` — её нужно собирать локально перед каждым `cap sync`.
 
@@ -105,13 +107,14 @@ npm run cap:open:ios
 
 | Проблема | Решение |
 |----------|---------|
-| `crypto.subtle` is undefined | Проверьте `iosScheme: "https"` в capacitor.config.ts и выполните `npx cap sync ios` |
+| `crypto.subtle` is undefined | На iOS обычно не связано со схемой. Пересоберите: `npm run build:standalone && npx cap sync ios`. Убедитесь, что не задан `iosScheme: "https"`. |
 | Камера не открывается | Добавьте `NSCameraUsageDescription` в Info.plist |
 | `No such module 'Capacitor'` | Открывайте правильный файл: `.xcodeproj` (SPM) или `.xcworkspace` (CocoaPods) |
 | Ошибки зависимостей (CocoaPods) | `cd ios/App && pod install --repo-update` |
 | Signing failed | Выберите правильную Team и Bundle Identifier |
 | Белый экран / пустое приложение | Выполните `npm run build:standalone && npx cap sync ios` |
-| Версии Capacitor не совпадают | `@capacitor/core`, `@capacitor/ios` и `@capacitor/cli` должны быть одной мажорной версии |
+| Версии Capacitor не совпадают | `@capacitor/core`, `@capacitor/ios` и `@capacitor/cli` должны быть одной мажорной версии (сейчас 8.x) |
+| Xcode слишком старый | Capacitor 8 требует Xcode 26.0+ |
 
 ## Структура после добавления iOS
 
