@@ -11,7 +11,8 @@ import { decodeAct, encodeAct } from "@/protocol/serialization";
 import type { Act, ActStatus, Contact, LedgerEntry } from "@/protocol/types";
 
 const DB_NAME = "normal-project";
-const DB_VERSION = 1;
+/** Keep in sync with history-db.ts */
+const DB_VERSION = 2;
 
 export interface StoredIdentity {
   publicKeyHex: string;
@@ -55,6 +56,12 @@ function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains("settings")) db.createObjectStore("settings");
       if (!db.objectStoreNames.contains("events")) {
         db.createObjectStore("events", { autoIncrement: true });
+      }
+      if (!db.objectStoreNames.contains("history")) {
+        db.createObjectStore("history", { keyPath: "seq" });
+      }
+      if (!db.objectStoreNames.contains("meta")) {
+        db.createObjectStore("meta");
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -124,11 +131,10 @@ export async function clearIdentity() {
 export async function wipeUserData() {
   const db = await openDb();
   try {
-    const tx = db.transaction(["identity", "keys", "acts", "contacts"], "readwrite");
-    tx.objectStore("identity").clear();
-    tx.objectStore("keys").clear();
-    tx.objectStore("acts").clear();
-    tx.objectStore("contacts").clear();
+    const names = ["identity", "keys", "acts", "contacts", "history", "meta"] as const;
+    const existing = names.filter((n) => db.objectStoreNames.contains(n));
+    const tx = db.transaction(existing, "readwrite");
+    for (const n of existing) tx.objectStore(n).clear();
     await txDone(tx);
   } finally {
     db.close();
