@@ -14,7 +14,6 @@ const config: CapacitorConfig = {
   ios: {
     contentInset: "automatic",
     preferredContentMode: "mobile",
-    scheme: "Спасибо много",
   },
 };
 
