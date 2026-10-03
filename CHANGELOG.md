@@ -15,6 +15,12 @@
 - PROTOCOL.md §6: инвариант — нетто-позиции, а не парные B_ij.
 - Телефон автора восстановлен в документации и интерфейсе лаборатории.
 
+**iOS / Xcode:**
+- Добавлена поддержка платформы iOS через Capacitor (`@capacitor/ios`).
+- Обновлён `capacitor.config.ts` (iosScheme, настройки iOS).
+- Создан полный гайд [IOS_BUILD.md](IOS_BUILD.md).
+- В README добавлена секция сборки для iPhone.
+
 ## 1.3.2 — 2026-10-03
 
 - Полный исходник на GitHub: [stephanvoznyak-dot/spasibo-mnogo](https://github.com/stephanvoznyak-dot/spasibo-mnogo)
