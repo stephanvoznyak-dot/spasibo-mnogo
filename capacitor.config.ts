@@ -6,9 +6,15 @@ const config: CapacitorConfig = {
   webDir: "android-www",
   server: {
     androidScheme: "https",
+    iosScheme: "https",
   },
   android: {
     allowMixedContent: false,
+  },
+  ios: {
+    contentInset: "automatic",
+    preferredContentMode: "mobile",
+    scheme: "Спасибо много",
   },
 };
 
