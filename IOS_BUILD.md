@@ -9,7 +9,8 @@
 - macOS с установленным **Xcode** (актуальная стабильная версия из App Store)
 - Apple ID (для симулятора достаточно; для устройства и App Store — Apple Developer Program)
 - Node.js 20+ и npm
-- CocoaPods (`sudo gem install cocoapods` или через Homebrew)
+
+С Capacitor 8 по умолчанию используется **Swift Package Manager (SPM)**. CocoaPods не обязателен.
 
 ## Быстрый старт (первый раз)
 
@@ -31,6 +32,16 @@ npx cap open ios
 
 После `npx cap add ios` в корне проекта появится папка `ios/`.
 
+### Если нужен CocoaPods вместо SPM
+
+```bash
+npx cap add ios --packagemanager CocoaPods
+cd ios/App && pod install && cd ../..
+npx cap open ios
+```
+
+При использовании CocoaPods открывайте **App.xcworkspace**, а не `.xcodeproj`.
+
 ## Последующие сборки
 
 ```bash
@@ -39,7 +50,7 @@ npx cap sync ios
 npx cap open ios
 ```
 
-Или одной командой:
+Или скриптами из package.json:
 
 ```bash
 npm run cap:sync:ios
@@ -48,7 +59,7 @@ npm run cap:open:ios
 
 ## Настройки в Xcode (обязательно)
 
-1. Откройте `ios/App/App.xcworkspace` (не `.xcodeproj`).
+1. Откройте проект через `npx cap open ios` (или вручную `ios/App/App.xcodeproj` при SPM / `ios/App/App.xcworkspace` при CocoaPods).
 2. Выберите target **App** → вкладка **Signing & Capabilities**:
    - Team — ваша команда разработчика
    - Bundle Identifier — `org.normalproject.journal` (или свой уникальный)
@@ -62,7 +73,7 @@ npm run cap:open:ios
 <string>Приложению требуется доступ к камере для сканирования QR-кодов актов обязательств.</string>
 ```
 
-Без этого ключа камера не будет работать, и приложение может быть отклонено при публикации.
+Без этого ключа камера не будет работать, и приложение может быть отклонено при публикации в App Store.
 
 ## Запуск
 
@@ -84,34 +95,38 @@ npm run cap:open:ios
 
 ## Важные технические замечания
 
-- `webDir` в `capacitor.config.ts` указывает на `android-www`. Скрипт `build:standalone` заполняет эту папку — она используется и для iOS.
-- `iosScheme: "https"` обеспечивает корректную работу `crypto.subtle` и Web Crypto API в WKWebView.
-- Плагин `@capacitor/camera` уже подключён. После `cap sync` разрешения обрабатываются нативно.
+- `webDir` в `capacitor.config.ts` указывает на `android-www`. Скрипт `build:standalone` заполняет эту папку и создаёт в ней `index.html` — она используется и для iOS.
+- `server.iosScheme: "https"` обеспечивает корректную работу `crypto.subtle` и Web Crypto API в WKWebView (аналогично `androidScheme`).
+- Плагины `@capacitor/camera`, `@capacitor/app`, `@capacitor/preferences` уже подключены. После `cap sync` они становятся доступны нативно.
 - Приватный ключ и мнемоника никогда не покидают устройство (см. SECURITY.md).
+- Папка `android-www/` в `.gitignore` — её нужно собирать локально перед каждым `cap sync`.
 
 ## Типичные проблемы
 
 | Проблема | Решение |
 |----------|---------|
-| `crypto.subtle` undefined | Проверьте `iosScheme: "https"` и пересоберите (`cap sync`) |
+| `crypto.subtle` is undefined | Проверьте `iosScheme: "https"` в capacitor.config.ts и выполните `npx cap sync ios` |
 | Камера не открывается | Добавьте `NSCameraUsageDescription` в Info.plist |
-| CocoaPods ошибки | `cd ios/App && pod install --repo-update` |
-| Signing failed | Выберите правильную Team и Bundle ID |
-| Белый экран | Выполните `npm run build:standalone && npx cap sync ios` |
+| `No such module 'Capacitor'` | Открывайте правильный файл: `.xcodeproj` (SPM) или `.xcworkspace` (CocoaPods) |
+| Ошибки зависимостей (CocoaPods) | `cd ios/App && pod install --repo-update` |
+| Signing failed | Выберите правильную Team и Bundle Identifier |
+| Белый экран / пустое приложение | Выполните `npm run build:standalone && npx cap sync ios` |
+| Версии Capacitor не совпадают | `@capacitor/core`, `@capacitor/ios` и `@capacitor/cli` должны быть одной мажорной версии |
 
 ## Структура после добавления iOS
 
 ```
 spasibo-mnogo/
-├── ios/                  ← генерируется `npx cap add ios`
+├── ios/                    ← генерируется `npx cap add ios`
 │   └── App/
-│       ├── App.xcworkspace
+│       ├── App.xcodeproj   ← SPM (по умолчанию в Capacitor 8)
+│       ├── App.xcworkspace ← только при CocoaPods
 │       └── App/
 │           └── Info.plist
 ├── android/
-├── android-www/          ← веб-активы для обеих платформ
+├── android-www/            ← веб-активы (генерируется build:standalone)
 ├── capacitor.config.ts
 └── ...
 ```
 
-После первого `npx cap add ios` рекомендуется закоммитить папку `ios/` в репозиторий, чтобы другие разработчики не выполняли `cap add` заново.
+После первого успешного `npx cap add ios` рекомендуется закоммитить папку `ios/` в репозиторий, чтобы другим разработчикам не пришлось выполнять `cap add` заново.
