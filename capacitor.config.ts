@@ -5,8 +5,11 @@ const config: CapacitorConfig = {
   appName: "Спасибо много",
   webDir: "android-www",
   server: {
+    // Android: https required for crypto.subtle and secure context in WebView
     androidScheme: "https",
-    iosScheme: "https",
+    // iOS: do NOT set iosScheme to "http" or "https" — WKWebView reserves them.
+    // Capacitor defaults to "capacitor://localhost", which is a secure context.
+    // Invalid schemes are silently reset to "capacitor".
   },
   android: {
     allowMixedContent: false,
