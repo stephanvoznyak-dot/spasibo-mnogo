@@ -3,9 +3,20 @@ import { createMnemonic } from "@/crypto/bip39";
 import { deriveKeypair } from "@/crypto/keys";
 import { createSignedM1, signM2, verifyAct } from "@/protocol/act";
 import { applyCycle, findCycles } from "@/protocol/clearing";
+import {
+  appendClearing,
+  deriveState,
+  findCyclesFromState,
+  snapshotStateNets,
+} from "@/protocol/derive";
+import { appendAct, historyFromActs, MAX_CYCLE_LEN } from "@/protocol/history";
 import { snapshotNets } from "@/protocol/graph";
-import { decodeQrMessage, encodeQrMessage } from "@/protocol/qr-messages";
-import { ProtocolError, type ClearingCycle, type LedgerEntry } from "@/protocol/types";
+import {
+  decodeQrMessage,
+  encodeQrMessage,
+  QR_MAX_RAW_CHARS,
+} from "@/protocol/qr-messages";
+import { ProtocolError, type Act, type ClearingCycle, type History, type LedgerEntry } from "@/protocol/types";
 import { entryFromAct, mergeFinalEntry } from "@/swarm/sync";
 
 function line(ok: boolean, name: string, extra = "") {
@@ -16,7 +27,24 @@ function agent() {
   return deriveKeypair(createMnemonic(12));
 }
 
-function entriesOf(acts: ReturnType<typeof signM2>[]): LedgerEntry[] {
+function finalAct(
+  from: { secretKey: Uint8Array; publicKey: Uint8Array },
+  to: { secretKey: Uint8Array; publicKey: Uint8Array },
+  amount: number,
+): Act {
+  return signM2(
+    createSignedM1({
+      fromSecret: from.secretKey,
+      fromPublic: from.publicKey,
+      to: to.publicKey,
+      amount,
+    }),
+    to.secretKey,
+    to.publicKey,
+  );
+}
+
+function entriesOf(acts: Act[]): LedgerEntry[] {
   return acts.map((act) => ({
     act,
     status: "finalized" as const,
@@ -34,6 +62,7 @@ function caught(fn: () => void): boolean {
   }
 }
 
+/** Classic F01–F08 + merge tests. */
 export function runLabSuite(): string[] {
   const out: string[] = [];
   const a = agent();
@@ -68,9 +97,9 @@ export function runLabSuite(): string[] {
   );
 
   const triangle = entriesOf([
-    signM2(createSignedM1({ fromSecret: a.secretKey, fromPublic: a.publicKey, to: b.publicKey, amount: 10 }), b.secretKey, b.publicKey),
-    signM2(createSignedM1({ fromSecret: b.secretKey, fromPublic: b.publicKey, to: c.publicKey, amount: 10 }), c.secretKey, c.publicKey),
-    signM2(createSignedM1({ fromSecret: c.secretKey, fromPublic: c.publicKey, to: a.publicKey, amount: 10 }), a.secretKey, a.publicKey),
+    finalAct(a, b, 10),
+    finalAct(b, c, 10),
+    finalAct(c, a, 10),
   ]);
   const beforeEq = snapshotNets(triangle);
   const cyclesEq = findCycles(triangle);
@@ -81,11 +110,7 @@ export function runLabSuite(): string[] {
     out.push(line(!threw && snapshotNets(triangle) === beforeEq, "инвариант нетто (нули)"));
   }
 
-  const uneven = entriesOf([
-    signM2(createSignedM1({ fromSecret: a.secretKey, fromPublic: a.publicKey, to: b.publicKey, amount: 18 }), b.secretKey, b.publicKey),
-    signM2(createSignedM1({ fromSecret: b.secretKey, fromPublic: b.publicKey, to: c.publicKey, amount: 12 }), c.secretKey, c.publicKey),
-    signM2(createSignedM1({ fromSecret: c.secretKey, fromPublic: c.publicKey, to: a.publicKey, amount: 8 }), a.secretKey, a.publicKey),
-  ]);
+  const uneven = entriesOf([finalAct(a, b, 18), finalAct(b, c, 12), finalAct(c, a, 8)]);
   const beforeU = snapshotNets(uneven);
   const cycU = findCycles(uneven);
   let applied = false;
@@ -108,12 +133,7 @@ export function runLabSuite(): string[] {
     residual: 1,
     edges: [{ from: bytesToHex(a.publicKey), to: bytesToHex(b.publicKey), weight: 1 }],
   };
-  out.push(
-    line(
-      caught(() => applyCycle([], fake)),
-      "F04 фиктивный клиринг без актов",
-    ),
-  );
+  out.push(line(caught(() => applyCycle([], fake)), "F04 фиктивный клиринг без актов"));
 
   const frozen = createSignedM1({
     fromSecret: a.secretKey,
@@ -135,7 +155,9 @@ export function runLabSuite(): string[] {
 
   const qr = encodeQrMessage("act-proposal", frozen);
   const back = decodeQrMessage(qr);
-  out.push(line(back.type === "act-proposal" && bytesToHex(back.act.hash) === bytesToHex(frozen.hash), "QR конверт roundtrip"));
+  out.push(
+    line(back.type === "act-proposal" && bytesToHex(back.act.hash) === bytesToHex(frozen.hash), "QR конверт roundtrip"),
+  );
 
   const second = [...uneven];
   out.push(
@@ -171,4 +193,105 @@ export function runLabSuite(): string[] {
   out.push(line(!again.changed, "повторный final не дублирует акт"));
 
   return out;
+}
+
+/** Canon 2.2: History → State, idempotency, QR size, cycle bound. */
+export function runCanonSuite(): string[] {
+  const out: string[] = [];
+  const a = agent();
+  const b = agent();
+  const c = agent();
+
+  // Empty history
+  const empty = deriveState([]);
+  out.push(line(empty.acts.size === 0 && empty.net.size === 0, "C01 empty History → empty State"));
+
+  // Single act
+  const act42 = finalAct(a, b, 42);
+  const h1 = historyFromActs([act42]);
+  const s1 = deriveState(h1);
+  out.push(
+    line(
+      s1.remaining.get(bytesToHex(act42.hash)) === 42 && s1.status.get(bytesToHex(act42.hash)) === "finalized",
+      "C02 single act remaining=amount",
+    ),
+  );
+
+  // Idempotent appendAct
+  const r1 = appendAct([], act42);
+  const r2 = appendAct(r1.history, act42);
+  out.push(line(r1.added === true && r2.added === false && r2.history.length === 1, "C03 appendAct идемпотентен"));
+
+  // 18-12-8 via History
+  const ab = finalAct(a, b, 18);
+  const bc = finalAct(b, c, 12);
+  const ca = finalAct(c, a, 8);
+  let history: History = historyFromActs([ab, bc, ca]);
+  const before = deriveState(history);
+  const netsBefore = snapshotStateNets(before);
+  const cycles = findCyclesFromState(before);
+  out.push(line(cycles.length >= 1 && cycles[0]!.residual === 8, "C04 цикл residual=8", `n=${cycles.length}`));
+  out.push(line((cycles[0]?.nodes.length ?? 99) <= MAX_CYCLE_LEN, "C05 длина цикла ≤ MAX_CYCLE_LEN", `max=${MAX_CYCLE_LEN}`));
+
+  if (cycles[0]) {
+    const { history: afterH, state: after } = appendClearing(history, cycles[0]);
+    history = afterH;
+    const okRem =
+      after.remaining.get(bytesToHex(ab.hash)) === 10 &&
+      after.remaining.get(bytesToHex(bc.hash)) === 4 &&
+      after.remaining.get(bytesToHex(ca.hash)) === 0;
+    out.push(line(okRem, "C06 18-12-8 → remaining 10/4/0"));
+    out.push(line(snapshotStateNets(after) === netsBefore, "C07 инвариант N_i после ClearingAssertion"));
+    out.push(line(afterH.length === 4 && afterH[3]!.kind === "clearing", "C08 History += ClearingAssertion"));
+
+    // Recovery
+    const recovered = deriveState(afterH);
+    out.push(
+      line(
+        recovered.remaining.get(bytesToHex(ab.hash)) === 10 &&
+          recovered.remaining.get(bytesToHex(ca.hash)) === 0,
+        "C09 Recovery = deriveState(History)",
+      ),
+    );
+
+    // Determinism
+    const sA = deriveState(afterH);
+    const sB = deriveState(afterH);
+    out.push(line(snapshotStateNets(sA) === snapshotStateNets(sB), "C10 deriveState детерминирован"));
+  }
+
+  // History not mutated by deriveState
+  const frozenH: History = historyFromActs([finalAct(a, b, 5)]);
+  const lenBefore = frozenH.length;
+  deriveState(frozenH);
+  out.push(line(frozenH.length === lenBefore, "C11 History не мутируется deriveState"));
+
+  // QR size limit
+  out.push(
+    line(
+      caught(() => decodeQrMessage("x".repeat(QR_MAX_RAW_CHARS + 10))),
+      "C12 QR_SIZE отказ на oversized",
+    ),
+  );
+
+  // pending_m2
+  const pend = createSignedM1({
+    fromSecret: a.secretKey,
+    fromPublic: a.publicKey,
+    to: b.publicKey,
+    amount: 3,
+  });
+  const sp = deriveState([{ kind: "act", wire: pend }]);
+  out.push(
+    line(
+      sp.remaining.get(bytesToHex(pend.hash)) === 0 && sp.status.get(bytesToHex(pend.hash)) === "pending_m2",
+      "C13 pending_m2 remaining=0",
+    ),
+  );
+
+  return out;
+}
+
+export function runAllSuites(): { classic: string[]; canon: string[] } {
+  return { classic: runLabSuite(), canon: runCanonSuite() };
 }
