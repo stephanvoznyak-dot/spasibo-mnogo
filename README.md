@@ -86,22 +86,18 @@ cd android && ./gradlew assembleDebug
 Пакет: `org.normalproject.journal` · iOS 15+ · CAMERA.  
 Имя на устройстве: **Спасибо много**.
 
-Первый запуск (на macOS с Xcode):
+На macOS с Xcode 26.0+:
 
 ```bash
 npm install
-npx cap add ios
-npm run build:standalone
-npx cap sync ios
+npm run setup:ios
 npx cap open ios
 ```
 
-В Xcode:
-1. Выберите Team и Bundle Identifier.
-2. Добавьте в Info.plist ключ `NSCameraUsageDescription`.
-3. Запустите на симуляторе или устройстве.
+Скрипт сам соберёт веб-активы, создаст `ios/`, пропишет разрешения камеры в Info.plist и выполнит `cap sync`.  
+В Xcode остаётся выбрать **Team** в Signing & Capabilities и нажать Run.
 
-Полная инструкция: [IOS_BUILD.md](IOS_BUILD.md).
+Подробности: [IOS_BUILD.md](IOS_BUILD.md).
 
 ## Документы
 
