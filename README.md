@@ -81,12 +81,35 @@ cd android && ./gradlew assembleDebug
 Готовый debug APK: `public/downloads/normal-project.apk`  
 В приложении: **Ещё → Скачать APK**.
 
+## iOS (iPhone) — Xcode
+
+Пакет: `org.normalproject.journal` · iOS 15+ · CAMERA.  
+Имя на устройстве: **Спасибо много**.
+
+Первый запуск (на macOS с Xcode):
+
+```bash
+npm install
+npx cap add ios
+npm run build:standalone
+npx cap sync ios
+npx cap open ios
+```
+
+В Xcode:
+1. Выберите Team и Bundle Identifier.
+2. Добавьте в Info.plist ключ `NSCameraUsageDescription`.
+3. Запустите на симуляторе или устройстве.
+
+Полная инструкция: [IOS_BUILD.md](IOS_BUILD.md).
+
 ## Документы
 
 - [PROTOCOL.md](PROTOCOL.md) — форматы, клиринг, рой
 - [SECURITY.md](SECURITY.md) — модель угроз
 - [CHANGELOG.md](CHANGELOG.md)
 - [ANDROID_RELEASE.md](ANDROID_RELEASE.md) — требования к release-APK
+- [IOS_BUILD.md](IOS_BUILD.md) — сборка для iPhone / Xcode
 
 ## Отказ от ответственности
 
