@@ -1,6 +1,6 @@
 # Спасибо много / Normal Project
 
-Промышленный образец личного журнала взаимных обязательств.  
+Промышленный образец децентрализованного личного журнала взаимных обязательств.  
 Не блокчейн, не кошелёк, не платёжная система.
 
 Репозиторий: [github.com/stephanvoznyak-dot/spasibo-mnogo](https://github.com/stephanvoznyak-dot/spasibo-mnogo)  
@@ -8,14 +8,14 @@
 Канал: [t.me/+buaSHWKuVTY2ZmNi](https://t.me/+buaSHWKuVTY2ZmNi)  
 Автор концепции: **Ларионов Пётр** · +7 903 606-00-06 · [@Peterlarionov](https://t.me/Peterlarionov)
 
-Версия **1.3.2**.
+Версия **1.3.3**.
 
 ## Что умеет
 
 - Личность BIP-39 (12/24 слова) → Ed25519
 - Двусторонние акты (M1 + M2) с каноническим CBOR и SHA-256
 - Обмен офлайн через QR (живая камера, снимок, ручной ввод)
-- Многосторонний клиринг циклов: остаток = min цикла, нетто-позиции узлов не меняются
+- Многосторонний клиринг циклов с сохранением нетто-позиций узлов
 - Рой между вкладками (`bitfield / have / want / piece`)
 - Полностью офлайн после загрузки
 - Лаборатория (код `+79036060006`): учебные контакты, треугольник 18-12-8, тесты F01–F08
@@ -27,10 +27,22 @@ npm install
 npm run dev
 ```
 
-Протокол:
+Сборка:
+
+```
+npm run build
+```
+
+Юнит-тесты протокола:
 
 ```
 npm run test:protocol
+```
+
+или
+
+```
+node --experimental-strip-types --test src/protocol/act.test.ts
 ```
 
 ## Самодостаточный HTML
@@ -39,12 +51,20 @@ npm run test:protocol
 npm run build:standalone
 ```
 
-Файл: `public/downloads/normal-project.html`
+или
+
+```
+node scripts/build-standalone.mjs
+```
+
+Файл: `public/downloads/normal-project.html` (и копия в `android-www/`).
 
 ## Android APK
 
 Пакет: `org.normalproject.journal` · minSdk 26 (Android 8.0) · CAMERA.  
 Имя на устройстве: **Спасибо много**.
+
+Сборка debug:
 
 ```
 export JAVA_HOME=/path/to/jdk-21
@@ -54,15 +74,19 @@ npx cap copy android
 cd android && ./gradlew assembleDebug
 ```
 
-`androidScheme: "https"` обязателен: без него `crypto.subtle` и камера в WebView не работают.
+`androidScheme: "https"` обязателен: без него `crypto.subtle` и камера в WebView отваливаются.
 
-Готовый debug APK — во вкладке Releases и в приложении: **Ещё → Скачать APK**.
+Для распространения используйте только release-сборку (см. [ANDROID_RELEASE.md](ANDROID_RELEASE.md)).
+
+Готовый debug APK: `public/downloads/normal-project.apk`  
+В приложении: **Ещё → Скачать APK**.
 
 ## Документы
 
 - [PROTOCOL.md](PROTOCOL.md) — форматы, клиринг, рой
 - [SECURITY.md](SECURITY.md) — модель угроз
 - [CHANGELOG.md](CHANGELOG.md)
+- [ANDROID_RELEASE.md](ANDROID_RELEASE.md) — требования к release-APK
 
 ## Отказ от ответственности
 
