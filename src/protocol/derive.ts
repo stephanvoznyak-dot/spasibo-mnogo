@@ -15,7 +15,6 @@ import {
   type EdgeKey,
   type HashHex,
   type History,
-  type HistoryEvent,
   type State,
 } from "./types";
 
@@ -69,6 +68,11 @@ function ingestAct(state: State, act: Act): void {
  * Apply one ClearingAssertion onto a working State.
  * Distributes residual along cycle edges in act-timestamp order (FIFO).
  * Throws if residual cannot be fully allocated or net invariant breaks.
+ *
+ * Net update per edge (from → to, residual r):
+ *   from: outgoing remaining −r  →  net +r
+ *   to:   incoming remaining −r  →  net −r
+ * Over a full cycle ΣΔ = 0, so N_i is preserved.
  */
 function applyAssertion(state: State, assertion: ClearingAssertion): void {
   if (assertion.version !== 1) {
@@ -86,22 +90,22 @@ function applyAssertion(state: State, assertion: ClearingAssertion): void {
 
   const before = snapshotNet(state.net);
   const n = assertion.cycle.length;
+  const r = assertion.residual;
 
   for (let i = 0; i < n; i++) {
     const from = assertion.cycle[i]!;
     const to = assertion.cycle[(i + 1) % n]!;
     const key = edgeKey(from, to);
     const edgeWeight = state.edgeRemaining.get(key) ?? 0;
-    if (edgeWeight < assertion.residual) {
+    if (edgeWeight < r) {
       throw new ProtocolError(
-        `Фиктивный клиринг: на ребре ${from.slice(0, 8)}→${to.slice(0, 8)} остаток ${edgeWeight} < residual ${assertion.residual}`,
+        `Фиктивный клиринг: на ребре ${from.slice(0, 8)}→${to.slice(0, 8)} остаток ${edgeWeight} < residual ${r}`,
         "F04",
       );
     }
 
-    let need = assertion.residual;
+    let need = r;
 
-    // Collect open acts on this edge, sorted by timestamp (FIFO).
     const matching: Array<{ hashHex: HashHex; act: Act; rem: number }> = [];
     for (const [hashHex, act] of state.openActs) {
       if (bytesToHex(act.from) === from && bytesToHex(act.to) === to) {
@@ -129,11 +133,10 @@ function applyAssertion(state: State, assertion: ClearingAssertion): void {
       throw new ProtocolError("Не удалось распределить residual по актам", "F05");
     }
 
-    addEdge(state.edgeRemaining, key, -assertion.residual);
-    // Net positions are unchanged by design: each node loses residual on out-edge
-    // and gains residual on in-edge. We still recompute via the loop below is not
-    // needed — invariant check after the full cycle is sufficient. Explicit:
-    // from loses residual on outgoing, gains residual on incoming → ΔN = 0.
+    addEdge(state.edgeRemaining, key, -r);
+    // Update net so it always reflects current remaining.
+    addNet(state.net, from, +r);
+    addNet(state.net, to, -r);
   }
 
   const after = snapshotNet(state.net);
@@ -165,7 +168,7 @@ export function deriveState(history: History): State {
 }
 
 /**
- * Build a ClearingAssertion from a discovered cycle and current State.
+ * Build a ClearingAssertion from a discovered cycle.
  * Does not apply it — caller must append to History and re-derive.
  */
 export function makeClearingAssertion(
@@ -189,7 +192,7 @@ export function makeClearingAssertion(
 }
 
 /**
- * Find cycles from a derived State (same algorithm as graph/clearing, but on State).
+ * Find cycles from a derived State.
  */
 export function findCyclesFromState(state: State, maxLen = 12): ClearingCycle[] {
   const adj = new Map<AgentId, Map<AgentId, number>>();
@@ -258,7 +261,7 @@ export function findCyclesFromState(state: State, maxLen = 12): ClearingCycle[] 
 }
 
 /**
- * Convenience: append a clearing for the best cycle and return new History + State.
+ * Append a clearing for the given cycle and return new History + State.
  * Pure — does not mutate inputs.
  */
 export function appendClearing(
