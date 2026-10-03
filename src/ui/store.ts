@@ -3,10 +3,12 @@ import { bytesToHex } from "@/crypto/bytes";
 import { createMnemonic, isValidMnemonic, normalizeMnemonic, type WordCount } from "@/crypto/bip39";
 import { deriveKeypair, fingerprintOf, parsePublicKey, publicKeyHex } from "@/crypto/keys";
 import { createSignedM1, describeAct, signM2, verifyAct } from "@/protocol/act";
+import { stateToEntries } from "@/protocol/bridge";
 import { applyCycle, findCycles } from "@/protocol/clearing";
+import { appendClearing, findCycles as findCyclesHistory } from "@/protocol/history";
 import { counterparties } from "@/protocol/graph";
 import { decodeManualFallback } from "@/protocol/qr-messages";
-import type { Act, ClearingCycle, ClearingResult, Contact, LedgerEntry } from "@/protocol/types";
+import type { Act, ClearingCycle, ClearingResult, Contact, History, LedgerEntry } from "@/protocol/types";
 import {
   exportLedgerJson,
   generateWrappingKey,
@@ -23,6 +25,13 @@ import {
   wipeUserData,
   type AppSettings,
 } from "@/storage/db";
+import {
+  appendHistoryEvent,
+  loadHistory,
+  loadState,
+  migrateLegacyActsToHistory,
+  saveHistory,
+} from "@/storage/history-db";
 import { entryFromAct, mergeFinalEntry, startSwarm, type SwarmHandle } from "@/swarm/sync";
 import { type Lang } from "./i18n";
 import { allTutorialAgents, checkLabPassword, tutorialKeypair } from "./tutorial";
@@ -61,6 +70,8 @@ interface AppState {
   error: string | null;
   identity: Identity | null;
   entries: LedgerEntry[];
+  /** Canon 2.2 ordered history (source of truth when available). */
+  history: History;
   contacts: Contact[];
   settings: AppSettings;
   screen: Screen;
@@ -126,11 +137,22 @@ function upsertContactList(contacts: Contact[], act: Act): Contact[] {
   return next;
 }
 
+/** Dual-write act to legacy store + history log. */
+async function persistAct(entry: LedgerEntry): Promise<void> {
+  await putAct(entry);
+  try {
+    await appendHistoryEvent({ kind: "act", wire: entry.act });
+  } catch (err) {
+    console.warn("history append failed (legacy still saved)", err);
+  }
+}
+
 export const useApp = create<AppState>((set, get) => ({
   ready: false,
   error: null,
   identity: null,
   entries: [],
+  history: [],
   contacts: [],
   settings: { theme: "dark", lang: "ru", autoClear: false, labUnlocked: false },
   screen: "home",
@@ -150,15 +172,32 @@ export const useApp = create<AppState>((set, get) => ({
       const settings = await loadSettings();
       applyTheme(settings.theme);
       const loaded = await loadIdentity();
-      const entries = await loadActs();
       const contacts = await loadContacts();
+
+      // Canon 2.2: migrate legacy acts → history, then derive UI entries from State
+      let history: History = [];
+      let entries: LedgerEntry[] = [];
+      try {
+        await migrateLegacyActsToHistory();
+        const loadedState = await loadState();
+        history = loadedState.history;
+        if (history.length > 0) {
+          entries = stateToEntries(loadedState.state);
+        } else {
+          entries = await loadActs();
+        }
+      } catch (err) {
+        console.warn("history load failed, fallback to legacy acts", err);
+        entries = await loadActs();
+      }
+
       if (!loaded) {
-        set({ ready: true, settings, entries, contacts, identity: null });
+        set({ ready: true, settings, entries, history, contacts, identity: null });
         return;
       }
       const wordCount = (loaded.mnemonic.split(" ").length === 24 ? 24 : 12) as WordCount;
       const identity = identityFromMnemonic(loaded.mnemonic, wordCount);
-      set({ ready: true, settings, entries, contacts, identity });
+      set({ ready: true, settings, entries, history, contacts, identity });
       attachSwarm(identity, get, set);
     } catch (err) {
       set({
@@ -216,10 +255,11 @@ export const useApp = create<AppState>((set, get) => ({
       remainingAmount: 0,
       addedAt: Date.now(),
     };
-    await putAct(entry);
+    await persistAct(entry);
     const contacts = upsertContactList(get().contacts, act);
     await saveContacts(contacts);
-    set({ entries: [...get().entries, entry], contacts });
+    const history = [...get().history, { kind: "act" as const, wire: act }];
+    set({ entries: [...get().entries, entry], contacts, history });
     return act;
   },
 
@@ -236,9 +276,16 @@ export const useApp = create<AppState>((set, get) => ({
       if (merged.changed) {
         const contacts = upsertContactList(get().contacts, act);
         const entry = merged.entries.find((e) => bytesToHex(e.act.hash) === bytesToHex(act.hash));
-        if (entry) await putAct(entry);
+        if (entry) await persistAct(entry);
         await saveContacts(contacts);
-        set({ entries: merged.entries, contacts });
+        let history = get().history;
+        try {
+          const r = await appendHistoryEvent({ kind: "act", wire: act });
+          if (r.added) history = [...history, { kind: "act", wire: act }];
+        } catch {
+          /* dual-write best-effort */
+        }
+        set({ entries: merged.entries, contacts, history });
         swarm?.announce(act);
       }
       return { kind: "final", act };
@@ -251,11 +298,30 @@ export const useApp = create<AppState>((set, get) => ({
     if (!identity) throw new Error("Нет личности");
     const signed = signM2(act, identity.secretKey, identity.publicKey);
     const merged = mergeFinalEntry(get().entries, signed);
-    const entry = merged.entries.find((e) => bytesToHex(e.act.hash) === bytesToHex(signed.hash)) ?? entryFromAct(signed);
-    await putAct(entry);
+    const entry =
+      merged.entries.find((e) => bytesToHex(e.act.hash) === bytesToHex(signed.hash)) ??
+      entryFromAct(signed);
+    await persistAct(entry);
     const contacts = upsertContactList(get().contacts, signed);
     await saveContacts(contacts);
-    set({ entries: merged.entries, contacts });
+    let history = get().history;
+    const already = history.some(
+      (e) => e.kind === "act" && bytesToHex(e.wire.hash) === bytesToHex(signed.hash),
+    );
+    if (!already) history = [...history, { kind: "act", wire: signed }];
+    else {
+      history = history.map((e) =>
+        e.kind === "act" && bytesToHex(e.wire.hash) === bytesToHex(signed.hash)
+          ? { kind: "act" as const, wire: signed }
+          : e,
+      );
+    }
+    try {
+      await saveHistory(history);
+    } catch {
+      /* best-effort */
+    }
+    set({ entries: merged.entries, contacts, history });
     swarm?.announce(signed);
     if (get().settings.autoClear) {
       await get().runClearing();
@@ -274,9 +340,72 @@ export const useApp = create<AppState>((set, get) => ({
     set({ contacts: next });
   },
 
-  cycles: () => findCycles(get().entries),
+  cycles: () => {
+    const history = get().history;
+    if (history.length > 0) {
+      try {
+        return findCyclesHistory(history);
+      } catch {
+        /* fall through */
+      }
+    }
+    return findCycles(get().entries);
+  },
 
   runClearing: async (cycle) => {
+    const history = get().history;
+    // Prefer Canon 2.2 path when history is available
+    if (history.length > 0) {
+      const results: ClearingResult[] = [];
+      let h = history;
+      const target = cycle ?? findCyclesHistory(h)[0];
+      if (!target) throw new Error("Фиктивный клиринг: цикл не найден");
+
+      const toRun = cycle
+        ? [cycle]
+        : (() => {
+            const out: ClearingCycle[] = [];
+            let cur = h;
+            for (let i = 0; i < 100; i++) {
+              const found = findCyclesHistory(cur);
+              const next = found[0];
+              if (!next) break;
+              out.push(next);
+              const r = appendClearing(cur, next);
+              cur = r.history;
+            }
+            return out;
+          })();
+
+      if (cycle) {
+        const r = appendClearing(h, cycle);
+        h = r.history;
+        results.push({
+          cycle,
+          residual: cycle.residual,
+          applied: [], // detailed applied filled from state delta if needed
+        });
+      } else {
+        for (const c of toRun) {
+          const r = appendClearing(h, c);
+          h = r.history;
+          results.push({ cycle: c, residual: c.residual, applied: [] });
+        }
+      }
+
+      if (!results.length) throw new Error("Фиктивный клиринг: цикл не найден");
+
+      await saveHistory(h);
+      const entries = stateToEntries(
+        (await import("@/protocol/derive")).deriveState(h),
+      );
+      // Keep legacy store in sync for swarm / export
+      await putActs(entries);
+      set({ history: h, entries, lastClearing: results, screen: "clearing" });
+      return results;
+    }
+
+    // Legacy mutable path
     const entries = get().entries.map((e) => ({ ...e, act: e.act }));
     const results: ClearingResult[] = [];
     if (cycle) {
@@ -302,13 +431,20 @@ export const useApp = create<AppState>((set, get) => ({
     const imported = importLedgerJson(json);
     const existing = new Set(get().entries.map((e) => bytesToHex(e.act.hash)));
     const merged = [...get().entries];
+    let history = [...get().history];
     for (const entry of imported) {
       const h = bytesToHex(entry.act.hash);
       if (existing.has(h)) continue;
       merged.push(entry);
+      history.push({ kind: "act", wire: entry.act });
     }
     await putActs(merged);
-    set({ entries: merged });
+    try {
+      await saveHistory(history);
+    } catch {
+      /* best-effort */
+    }
+    set({ entries: merged, history });
   },
 
   wipe: async () => {
@@ -319,7 +455,20 @@ export const useApp = create<AppState>((set, get) => ({
       swarmTimer = null;
     }
     await wipeUserData();
-    set({ identity: null, entries: [], contacts: [], screen: "home", lastClearing: null, qr: null });
+    try {
+      await saveHistory([]);
+    } catch {
+      /* ignore */
+    }
+    set({
+      identity: null,
+      entries: [],
+      history: [],
+      contacts: [],
+      screen: "home",
+      lastClearing: null,
+      qr: null,
+    });
   },
 
   setLang: async (lang) => {
@@ -425,12 +574,21 @@ export const useApp = create<AppState>((set, get) => ({
       identity.publicKey,
     );
     let entries = get().entries;
+    let history = [...get().history];
     for (const act of [ab, bc, ca]) {
       const merged = mergeFinalEntry(entries, act);
       entries = merged.entries;
+      if (!history.some((e) => e.kind === "act" && bytesToHex(e.wire.hash) === bytesToHex(act.hash))) {
+        history.push({ kind: "act", wire: act });
+      }
     }
     await putActs(entries);
-    set({ entries });
+    try {
+      await saveHistory(history);
+    } catch {
+      /* best-effort */
+    }
+    set({ entries, history });
     await get().addTutorialContacts();
   },
 
@@ -473,11 +631,15 @@ function attachSwarm(
       const h = bytesToHex(act.hash);
       const entry = merged.entries.find((e) => bytesToHex(e.act.hash) === h);
       if (!entry) return;
-      void putAct(entry)
+      void persistAct(entry)
         .then(async () => {
           const contacts = upsertContactList(get().contacts, act);
           await saveContacts(contacts);
-          set({ entries: merged.entries, contacts });
+          let history = get().history;
+          if (!history.some((e) => e.kind === "act" && bytesToHex(e.wire.hash) === h)) {
+            history = [...history, { kind: "act", wire: act }];
+          }
+          set({ entries: merged.entries, contacts, history });
         })
         .catch((err: unknown) => {
           set({ error: err instanceof Error ? err.message : "Ошибка записи журнала" });
