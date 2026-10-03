@@ -18,6 +18,9 @@ import {
   type State,
 } from "./types";
 
+/** Default max cycle length — keeps search bounded on dense graphs (mobile). */
+export const MAX_CYCLE_LEN = 7;
+
 function snapshotNet(net: Map<AgentId, number>): string {
   return [...net.entries()]
     .filter(([, v]) => v !== 0)
@@ -38,9 +41,6 @@ function addEdge(edgeRemaining: Map<EdgeKey, number>, key: EdgeKey, delta: numbe
   else edgeRemaining.set(key, next);
 }
 
-/**
- * Apply a finalized act into a working State (mutates the state object).
- */
 function ingestAct(state: State, act: Act): void {
   const hashHex = bytesToHex(act.hash);
   state.acts.set(hashHex, act);
@@ -65,14 +65,11 @@ function ingestAct(state: State, act: Act): void {
 }
 
 /**
- * Apply one ClearingAssertion onto a working State.
- * Distributes residual along cycle edges in act-timestamp order (FIFO).
- * Throws if residual cannot be fully allocated or net invariant breaks.
- *
+ * Apply one ClearingAssertion.
  * Net update per edge (from → to, residual r):
- *   from: outgoing remaining −r  →  net +r
- *   to:   incoming remaining −r  →  net −r
- * Over a full cycle ΣΔ = 0, so N_i is preserved.
+ *   from: outgoing −r → net +r
+ *   to:   incoming −r → net −r
+ * Over a full cycle ΣΔ = 0 → N_i preserved.
  */
 function applyAssertion(state: State, assertion: ClearingAssertion): void {
   if (assertion.version !== 1) {
@@ -105,7 +102,6 @@ function applyAssertion(state: State, assertion: ClearingAssertion): void {
     }
 
     let need = r;
-
     const matching: Array<{ hashHex: HashHex; act: Act; rem: number }> = [];
     for (const [hashHex, act] of state.openActs) {
       if (bytesToHex(act.from) === from && bytesToHex(act.to) === to) {
@@ -113,7 +109,7 @@ function applyAssertion(state: State, assertion: ClearingAssertion): void {
         if (rem > 0) matching.push({ hashHex, act, rem });
       }
     }
-    matching.sort((a, b) => a.act.timestamp - b.act.timestamp);
+    matching.sort((a, b) => a.act.timestamp - b.act.timestamp || a.hashHex.localeCompare(b.hashHex));
 
     if (matching.length === 0) {
       throw new ProtocolError("Фиктивный клиринг: нет актов на ребре цикла", "F04");
@@ -134,7 +130,6 @@ function applyAssertion(state: State, assertion: ClearingAssertion): void {
     }
 
     addEdge(state.edgeRemaining, key, -r);
-    // Update net so it always reflects current remaining.
     addNet(state.net, from, +r);
     addNet(state.net, to, -r);
   }
@@ -145,10 +140,6 @@ function applyAssertion(state: State, assertion: ClearingAssertion): void {
   }
 }
 
-/**
- * Derive complete State from an ordered History.
- * Pure function: does not mutate the input History.
- */
 export function deriveState(history: History): State {
   const state = emptyState();
 
@@ -167,10 +158,6 @@ export function deriveState(history: History): State {
   return state;
 }
 
-/**
- * Build a ClearingAssertion from a discovered cycle.
- * Does not apply it — caller must append to History and re-derive.
- */
 export function makeClearingAssertion(
   cycle: ClearingCycle,
   opts?: { appliedAt?: number; nonce?: Uint8Array; prevHash?: Uint8Array | null },
@@ -192,9 +179,12 @@ export function makeClearingAssertion(
 }
 
 /**
- * Find cycles from a derived State.
+ * Deterministic cycle discovery.
+ * - maxLen default 7 (mobile-safe)
+ * - cycle key = rotate-to-min nodes joined by ">"
+ * - sort: residual desc → length asc → cycle key lex (identical on all devices)
  */
-export function findCyclesFromState(state: State, maxLen = 12): ClearingCycle[] {
+export function findCyclesFromState(state: State, maxLen = MAX_CYCLE_LEN): ClearingCycle[] {
   const adj = new Map<AgentId, Map<AgentId, number>>();
   for (const [key, weight] of state.edgeRemaining) {
     if (weight <= 0) continue;
@@ -210,7 +200,9 @@ export function findCyclesFromState(state: State, maxLen = 12): ClearingCycle[] 
     row.set(to, (row.get(to) ?? 0) + weight);
   }
 
-  const nodes = [...new Set([...adj.keys(), ...[...adj.values()].flatMap((m) => [...m.keys()])])];
+  const nodes = [...new Set([...adj.keys(), ...[...adj.values()].flatMap((m) => [...m.keys()])])].sort(
+    (a, b) => a.localeCompare(b),
+  );
   const found = new Map<string, ClearingCycle>();
 
   function rotateToMin(path: string[]): string[] {
@@ -226,7 +218,9 @@ export function findCyclesFromState(state: State, maxLen = 12): ClearingCycle[] 
     if (path.length > maxLen) return;
     const row = adj.get(current);
     if (!row) return;
-    for (const [next, weight] of row) {
+    // Deterministic neighbour order
+    const neighbours = [...row.entries()].sort(([a], [b]) => a.localeCompare(b));
+    for (const [next, weight] of neighbours) {
       if (weight <= 0) continue;
       if (next === start && path.length >= 2) {
         const rotated = rotateToMin([...path]);
@@ -255,15 +249,13 @@ export function findCyclesFromState(state: State, maxLen = 12): ClearingCycle[] 
     dfs(node, node, [node], new Set([node]));
   }
 
-  return [...found.values()].sort(
-    (a, b) => b.residual - a.residual || a.nodes.length - b.nodes.length,
-  );
+  return [...found.values()].sort((a, b) => {
+    if (b.residual !== a.residual) return b.residual - a.residual;
+    if (a.nodes.length !== b.nodes.length) return a.nodes.length - b.nodes.length;
+    return a.nodes.join(">").localeCompare(b.nodes.join(">"));
+  });
 }
 
-/**
- * Append a clearing for the given cycle and return new History + State.
- * Pure — does not mutate inputs.
- */
 export function appendClearing(
   history: History,
   cycle: ClearingCycle,
@@ -275,7 +267,6 @@ export function appendClearing(
   return { history: nextHistory, state, assertion };
 }
 
-/** Snapshot of net positions for invariant checks in tests. */
 export function snapshotStateNets(state: State): string {
   return snapshotNet(state.net);
 }
