@@ -2,7 +2,8 @@ import { bytesToHex } from "@/crypto/bytes";
 import { aggregateAdj, remainingOf, snapshotNets } from "./graph";
 import { ProtocolError, type ClearingCycle, type ClearingResult, type LedgerEntry } from "./types";
 
-const MAX_CYCLE_LEN = 12;
+/** Aligned with derive.MAX_CYCLE_LEN — mobile-safe bound (remark: avoid main-thread stalls). */
+const MAX_CYCLE_LEN = 7;
 
 function rotateToMin(nodes: string[]): string[] {
   if (nodes.length === 0) return nodes;
@@ -15,14 +16,18 @@ function rotateToMin(nodes: string[]): string[] {
 
 export function findCycles(entries: LedgerEntry[], maxLen = MAX_CYCLE_LEN): ClearingCycle[] {
   const adj = aggregateAdj(entries);
-  const nodes = [...new Set([...adj.keys(), ...[...adj.values()].flatMap((m) => [...m.keys()])])];
+  const nodes = [...new Set([...adj.keys(), ...[...adj.values()].flatMap((m) => [...m.keys()])])].sort(
+    (a, b) => a.localeCompare(b),
+  );
   const found = new Map<string, ClearingCycle>();
 
   function dfs(start: string, current: string, path: string[], visited: Set<string>) {
     if (path.length > maxLen) return;
     const row = adj.get(current);
     if (!row) return;
-    for (const [next, weight] of row) {
+    // Deterministic neighbour order (identical result on all devices)
+    const neighbours = [...row.entries()].sort(([a], [b]) => a.localeCompare(b));
+    for (const [next, weight] of neighbours) {
       if (weight <= 0) continue;
       if (next === start && path.length >= 2) {
         const rotated = rotateToMin([...path]);
@@ -51,9 +56,17 @@ export function findCycles(entries: LedgerEntry[], maxLen = MAX_CYCLE_LEN): Clea
     dfs(node, node, [node], new Set([node]));
   }
 
-  return [...found.values()].sort((a, b) => b.residual - a.residual || a.nodes.length - b.nodes.length);
+  return [...found.values()].sort((a, b) => {
+    if (b.residual !== a.residual) return b.residual - a.residual;
+    if (a.nodes.length !== b.nodes.length) return a.nodes.length - b.nodes.length;
+    return a.nodes.join(">").localeCompare(b.nodes.join(">"));
+  });
 }
 
+/**
+ * @deprecated Prefer History + ClearingAssertion via derive/history.
+ * Mutates LedgerEntry.remainingAmount — transitional until storage migrates.
+ */
 export function applyCycle(entries: LedgerEntry[], cycle: ClearingCycle): ClearingResult {
   if (cycle.nodes.length < 2) {
     throw new ProtocolError("Фиктивный клиринг: цикл слишком короткий", "F04");
@@ -78,7 +91,7 @@ export function applyCycle(entries: LedgerEntry[], cycle: ClearingCycle): Cleari
           bytesToHex(e.act.from) === from &&
           bytesToHex(e.act.to) === to,
       )
-      .sort((a, b) => a.act.timestamp - b.act.timestamp);
+      .sort((a, b) => a.act.timestamp - b.act.timestamp || bytesToHex(a.act.hash).localeCompare(bytesToHex(b.act.hash)));
     if (matching.length === 0) {
       throw new ProtocolError("Фиктивный клиринг: нет актов на ребре цикла", "F04");
     }
