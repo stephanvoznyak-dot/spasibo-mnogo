@@ -4,10 +4,11 @@
 Не блокчейн, не кошелёк, не платёжная система.
 
 Репозиторий: [github.com/stephanvoznyak-dot/spasibo-mnogo](https://github.com/stephanvoznyak-dot/spasibo-mnogo)  
+Релизы (APK / HTML / ZIP): [github.com/stephanvoznyak-dot/spasibo-mnogo/releases](https://github.com/stephanvoznyak-dot/spasibo-mnogo/releases)  
 Канал: [t.me/+buaSHWKuVTY2ZmNi](https://t.me/+buaSHWKuVTY2ZmNi)  
 Автор концепции: **Ларионов Пётр** · +7 903 606-00-06 · [@Peterlarionov](https://t.me/Peterlarionov)
 
-Версия **1.3.1**.
+Версия **1.3.2**.
 
 ## Что умеет
 
@@ -55,7 +56,7 @@ cd android && ./gradlew assembleDebug
 
 `androidScheme: "https"` обязателен: без него `crypto.subtle` и камера в WebView не работают.
 
-Готовый debug APK собирается локально (`android/app/build/outputs/apk/debug/`). В приложении: **Ещё → Скачать APK**.
+Готовый debug APK — во вкладке Releases и в приложении: **Ещё → Скачать APK**.
 
 ## Документы
 

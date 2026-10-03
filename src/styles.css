@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+:root {
+  --np-bg: #0a0a0b;
+  --np-surface: #121214;
+  --np-surface-2: #1a1a1e;
+  --np-fg: #f0f0ee;
+  --np-muted: #9a9a96;
+  --np-subtle: #6e6e6a;
+  --np-border: color-mix(in oklab, #f0f0ee 12%, transparent);
+  --np-accent: #c8ccd4;
+  --np-accent-fg: #0a0a0b;
+  --np-paper: #f4f4f0;
+  --np-danger: #b4544a;
+  --np-ok: #6a8f73;
+  --np-ring: color-mix(in oklab, #c8ccd4 55%, transparent);
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif;
+  --font-body: "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --motion-quick: 150ms;
+  --motion-fast: 250ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html[data-theme="light"] {
+  --np-bg: #f3f2ee;
+  --np-surface: #fffcf7;
+  --np-surface-2: #eceae4;
+  --np-fg: #161614;
+  --np-muted: #5c5c56;
+  --np-subtle: #8a8a84;
+  --np-border: color-mix(in oklab, #161614 12%, transparent);
+  --np-accent: #2c2e32;
+  --np-accent-fg: #f4f4f0;
+  --np-paper: #161614;
+  --np-ring: color-mix(in oklab, #2c2e32 40%, transparent);
+}
+
+@theme {
+  --color-bg: var(--np-bg);
+  --color-surface: var(--np-surface);
+  --color-surface-2: var(--np-surface-2);
+  --color-fg: var(--np-fg);
+  --color-muted: var(--np-muted);
+  --color-subtle: var(--np-subtle);
+  --color-border: var(--np-border);
+  --color-accent: var(--np-accent);
+  --color-accent-fg: var(--np-accent-fg);
+  --color-paper: var(--np-paper);
+  --color-danger: var(--np-danger);
+  --color-ok: var(--np-ok);
+  --color-ring: var(--np-ring);
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-display);
+  --font-mono: var(--font-mono);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+}
+
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+  body {
+    margin: 0;
+    background: var(--np-bg);
+    color: var(--np-fg);
+    font-family: var(--font-body);
+    line-height: 1.5;
+  }
+  * {
+    border-color: var(--np-border);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
