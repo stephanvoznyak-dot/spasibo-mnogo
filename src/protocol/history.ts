@@ -1,7 +1,5 @@
 /**
  * Canon 2.2 — History as the sole source of truth.
- * appendAct / appendClearing never mutate prior events.
- * Idempotency: duplicate act hash is rejected (or no-op).
  */
 import { bytesToHex } from "@/crypto/bytes";
 import { verifyAct } from "./act";
@@ -10,6 +8,7 @@ import {
   deriveState,
   findCyclesFromState,
   makeClearingAssertion,
+  makeM2Assertion,
 } from "./derive";
 import {
   ProtocolError,
@@ -19,12 +18,12 @@ import {
   type HashHex,
   type History,
   type HistoryEvent,
+  type M2Assertion,
   type State,
 } from "./types";
 
 export const MAX_CYCLE_LEN = 7;
 
-/** Collect all act hashes already present in History. */
 export function historyActHashes(history: History): Set<HashHex> {
   const set = new Set<HashHex>();
   for (const ev of history) {
@@ -33,12 +32,7 @@ export function historyActHashes(history: History): Set<HashHex> {
   return set;
 }
 
-/**
- * Append a verified act to History.
- * Idempotent: if the same hash already exists, returns the original history unchanged
- * (no duplicate, no error) — safe for P2P / QR re-delivery.
- * Throws if the act fails cryptographic verification.
- */
+/** Append M1 act (idempotent by hash). */
 export function appendAct(
   history: History,
   act: Act,
@@ -46,21 +40,48 @@ export function appendAct(
 ): { history: History; state: State; added: boolean } {
   verifyAct(act);
   const hashHex = bytesToHex(act.hash);
-  const existing = historyActHashes(history);
-  if (existing.has(hashHex)) {
+  if (historyActHashes(history).has(hashHex)) {
     if (opts?.allowDuplicate === false) {
       throw new ProtocolError(`Акт ${hashHex.slice(0, 12)} уже есть в журнале`, "DUPLICATE");
     }
     return { history, state: deriveState(history), added: false };
   }
-  const next: History = [...history, { kind: "act", wire: act }];
+  // Strip sigM2 from act event — M2 is a separate event
+  const wire: Act = act.sigM2 ? { ...act, sigM2: null } : act;
+  const next: History = [...history, { kind: "act", wire }];
+  // If original had M2, also append m2 event
+  if (act.sigM2) {
+    next.push({
+      kind: "m2",
+      assertion: makeM2Assertion(act.hash, act.sigM2),
+    });
+  }
   return { history: next, state: deriveState(next), added: true };
 }
 
-/**
- * Append a clearing assertion for the given cycle.
- * Pure: does not mutate inputs.
- */
+/** Append M2 acceptance (idempotent by actHash). */
+export function appendM2(
+  history: History,
+  actHash: Uint8Array,
+  sigM2: Uint8Array,
+): { history: History; state: State; added: boolean; assertion: M2Assertion } {
+  const hashHex = bytesToHex(actHash);
+  const hasAct = history.some((e) => e.kind === "act" && bytesToHex(e.wire.hash) === hashHex);
+  if (!hasAct) {
+    throw new ProtocolError(`m2: акт ${hashHex.slice(0, 12)}… отсутствует`, "M2");
+  }
+  const hasM2 = history.some(
+    (e) => e.kind === "m2" && bytesToHex(e.assertion.actHash) === hashHex,
+  );
+  if (hasM2) {
+    const assertion = makeM2Assertion(actHash, sigM2);
+    return { history, state: deriveState(history), added: false, assertion };
+  }
+  const assertion = makeM2Assertion(actHash, sigM2);
+  const next: History = [...history, { kind: "m2", assertion }];
+  return { history: next, state: deriveState(next), added: true, assertion };
+}
+
 export function appendClearing(
   history: History,
   cycle: ClearingCycle,
@@ -69,25 +90,14 @@ export function appendClearing(
   return deriveAppendClearing(history, cycle, opts);
 }
 
-/**
- * Find cycles from History (derive State first).
- * Depth limited to MAX_CYCLE_LEN (remark: avoid main-thread stalls).
- * Sort is fully deterministic: residual desc → length asc → cycle key lex.
- */
 export function findCycles(history: History, maxLen = MAX_CYCLE_LEN): ClearingCycle[] {
-  const state = deriveState(history);
-  return findCyclesFromState(state, maxLen);
+  return findCyclesFromState(deriveState(history), maxLen);
 }
 
-/** Current derived State for a History. */
 export function stateOf(history: History): State {
   return deriveState(history);
 }
 
-/**
- * Build History from a flat list of acts (migration helper).
- * Does not synthesise clearing assertions — caller may add them later.
- */
 export function historyFromActs(acts: Act[]): History {
   const events: HistoryEvent[] = [];
   const seen = new Set<HashHex>();
@@ -96,9 +106,13 @@ export function historyFromActs(acts: Act[]): History {
     const h = bytesToHex(act.hash);
     if (seen.has(h)) continue;
     seen.add(h);
-    events.push({ kind: "act", wire: act });
+    const wire: Act = act.sigM2 ? { ...act, sigM2: null } : act;
+    events.push({ kind: "act", wire });
+    if (act.sigM2) {
+      events.push({ kind: "m2", assertion: makeM2Assertion(act.hash, act.sigM2) });
+    }
   }
   return events;
 }
 
-export { makeClearingAssertion, deriveState, findCyclesFromState };
+export { makeClearingAssertion, makeM2Assertion, deriveState, findCyclesFromState };
