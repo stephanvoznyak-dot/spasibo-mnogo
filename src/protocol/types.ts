@@ -35,19 +35,13 @@ export interface Act {
   nonce: Uint8Array;
   hash: Uint8Array;
   sigM1: Uint8Array;
+  /** Present on wire only after M2; in History, M2 is a separate event. */
   sigM2: Uint8Array | null;
-  /**
-   * Optional link to previous history head of the `from` agent (Canon 2.2).
-   * null / undefined = legacy act or empty journal. Soft migration only.
-   */
   prevHash?: Uint8Array | null;
 }
 
-// ─── Legacy mutable ledger entry (transitional, to be replaced by State) ─────
-
 /**
- * @deprecated Transitional. remainingAmount and status will become derived
- * from History via deriveState(). Do not treat as source of truth.
+ * @deprecated Transitional. remainingAmount/status derived via deriveState.
  */
 export interface LedgerEntry {
   act: Act;
@@ -85,48 +79,55 @@ export interface ClearingResult {
 // ─── Canon 2.2: History as sole source of truth ──────────────────────────────
 
 /**
- * Historical fact of a multi-party clearing.
- * Does not mutate prior Acts; residual is applied when deriving State.
+ * Counterparty acceptance of an act (M2).
+ * Separate event — never mutates the prior act event (fixes initiator reload bug).
+ */
+export interface M2Assertion {
+  /** Hash of the act body (same as Act.hash). */
+  actHash: Uint8Array;
+  /** Ed25519 signature by `to` over actHash. */
+  sigM2: Uint8Array;
+  /** Unix ms when recorded locally. */
+  appliedAt: number;
+}
+
+/**
+ * Historical fact of a multi-party clearing (local hypothesis unless signed — Stage B).
  */
 export interface ClearingAssertion {
   version: 1;
-  /** Ordered cycle of agent public-key hex strings. */
   cycle: AgentId[];
-  /** r(C) = min remaining on edges at the moment of assertion. */
   residual: number;
-  /** Unix ms when the assertion was recorded. */
   appliedAt: number;
-  /** Exactly 16 bytes. */
   nonce: Uint8Array;
-  /**
-   * Optional: hash of the journal head of the agent who recorded the assertion.
-   * Soft migration — may be null/undefined.
-   */
   prevHash?: Uint8Array | null;
+}
+
+/**
+ * Legacy migration only: reduce remaining on one act without a cycle
+ * (preserves amount−remaining from old LedgerEntry).
+ */
+export interface WriteDownAssertion {
+  actHash: Uint8Array;
+  /** Positive integer subtracted from remaining. */
+  delta: number;
+  appliedAt: number;
 }
 
 export type HistoryEvent =
   | { kind: "act"; wire: Act }
-  | { kind: "clearing"; assertion: ClearingAssertion };
+  | { kind: "m2"; assertion: M2Assertion }
+  | { kind: "clearing"; assertion: ClearingAssertion }
+  | { kind: "write_down"; assertion: WriteDownAssertion };
 
 export type History = HistoryEvent[];
 
-/**
- * Fully derived view. Never stored as primary data.
- * Recovery ≡ deriveState(History).
- */
 export interface State {
-  /** Remaining amount per act hash. Only acts with M2 appear. */
   remaining: Map<HashHex, number>;
-  /** Status derived from remaining vs amount. */
   status: Map<HashHex, ActStatus>;
-  /** Aggregated remaining per directed edge (fromHex > toHex). */
   edgeRemaining: Map<EdgeKey, number>;
-  /** Net position N_i = Σ in − Σ out for each agent. */
   net: Map<AgentId, number>;
-  /** Acts that still have positive remaining (for UI lists). */
   openActs: Map<HashHex, Act>;
-  /** All acts in history (including pending_m2 / cleared). */
   acts: Map<HashHex, Act>;
 }
 
@@ -141,7 +142,6 @@ export function emptyState(): State {
   };
 }
 
-/** Derive ActStatus from remaining vs signed amount. */
 export function statusFromRemaining(
   amount: number,
   remaining: number,

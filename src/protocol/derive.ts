@@ -1,8 +1,10 @@
 /**
  * Canon 2.2 — State derivation from immutable History.
  * Recovery ≡ deriveState(History).
+ *
+ * Events: act (M1) → m2 (acceptance) → clearing | write_down.
  */
-import { bytesToHex, randomBytes } from "@/crypto/bytes";
+import { bytesEqual, bytesToHex, randomBytes } from "@/crypto/bytes";
 import {
   edgeKey,
   emptyState,
@@ -15,10 +17,11 @@ import {
   type EdgeKey,
   type HashHex,
   type History,
+  type M2Assertion,
   type State,
+  type WriteDownAssertion,
 } from "./types";
 
-/** Default max cycle length — keeps search bounded on dense graphs (mobile). */
 export const MAX_CYCLE_LEN = 7;
 
 function snapshotNet(net: Map<AgentId, number>): string {
@@ -41,8 +44,12 @@ function addEdge(edgeRemaining: Map<EdgeKey, number>, key: EdgeKey, delta: numbe
   else edgeRemaining.set(key, next);
 }
 
+/** Ingest M1 act. If wire already carries sigM2 (legacy import), treat as finalized. */
 function ingestAct(state: State, act: Act): void {
   const hashHex = bytesToHex(act.hash);
+  // Prefer first act; later act with same hash ignored (idempotent)
+  if (state.acts.has(hashHex)) return;
+
   state.acts.set(hashHex, act);
 
   if (!act.sigM2) {
@@ -51,7 +58,14 @@ function ingestAct(state: State, act: Act): void {
     return;
   }
 
+  // Legacy wire already had M2 embedded
+  finalizeAct(state, act);
+}
+
+function finalizeAct(state: State, act: Act): void {
+  const hashHex = bytesToHex(act.hash);
   const remaining = act.amount;
+  state.acts.set(hashHex, act);
   state.remaining.set(hashHex, remaining);
   state.status.set(hashHex, statusFromRemaining(act.amount, remaining, true));
   state.openActs.set(hashHex, act);
@@ -64,13 +78,32 @@ function ingestAct(state: State, act: Act): void {
   addNet(state.net, to, +remaining);
 }
 
-/**
- * Apply one ClearingAssertion.
- * Net update per edge (from → to, residual r):
- *   from: outgoing −r → net +r
- *   to:   incoming −r → net −r
- * Over a full cycle ΣΔ = 0 → N_i preserved.
- */
+/** Apply M2: attach signature and open the obligation. */
+function applyM2(state: State, assertion: M2Assertion): void {
+  if (!(assertion.actHash instanceof Uint8Array) || assertion.actHash.length !== 32) {
+    throw new ProtocolError("m2: некорректный actHash", "M2");
+  }
+  if (!(assertion.sigM2 instanceof Uint8Array) || assertion.sigM2.length !== 64) {
+    throw new ProtocolError("m2: некорректная подпись", "M2");
+  }
+
+  const hashHex = bytesToHex(assertion.actHash);
+  const existing = state.acts.get(hashHex);
+  if (!existing) {
+    throw new ProtocolError(`m2: акт ${hashHex.slice(0, 12)}… не найден в истории`, "M2");
+  }
+  if (existing.sigM2) {
+    // Idempotent: already finalized
+    if (!bytesEqual(existing.sigM2, assertion.sigM2)) {
+      throw new ProtocolError("m2: конфликт подписей для одного акта", "M2");
+    }
+    return;
+  }
+
+  const finalized: Act = { ...existing, sigM2: assertion.sigM2 };
+  finalizeAct(state, finalized);
+}
+
 function applyAssertion(state: State, assertion: ClearingAssertion): void {
   if (assertion.version !== 1) {
     throw new ProtocolError(`Неподдерживаемая версия ClearingAssertion: ${assertion.version}`, "VERSION");
@@ -140,14 +173,44 @@ function applyAssertion(state: State, assertion: ClearingAssertion): void {
   }
 }
 
+/** Reduce remaining on a single act (legacy migration). Preserves net. */
+function applyWriteDown(state: State, assertion: WriteDownAssertion): void {
+  if (!(assertion.delta > 0) || !Number.isInteger(assertion.delta)) {
+    throw new ProtocolError("write_down: delta должен быть целым > 0", "WRITE_DOWN");
+  }
+  const hashHex = bytesToHex(assertion.actHash);
+  const act = state.acts.get(hashHex);
+  if (!act?.sigM2) {
+    throw new ProtocolError("write_down: акт не финализирован", "WRITE_DOWN");
+  }
+  const rem = state.remaining.get(hashHex) ?? 0;
+  if (assertion.delta > rem) {
+    throw new ProtocolError("write_down: delta > remaining", "WRITE_DOWN");
+  }
+  const newRem = rem - assertion.delta;
+  state.remaining.set(hashHex, newRem);
+  state.status.set(hashHex, statusFromRemaining(act.amount, newRem, true));
+  if (newRem === 0) state.openActs.delete(hashHex);
+
+  const from = bytesToHex(act.from);
+  const to = bytesToHex(act.to);
+  addEdge(state.edgeRemaining, edgeKey(from, to), -assertion.delta);
+  addNet(state.net, from, +assertion.delta);
+  addNet(state.net, to, -assertion.delta);
+}
+
 export function deriveState(history: History): State {
   const state = emptyState();
 
   for (const event of history) {
     if (event.kind === "act") {
       ingestAct(state, event.wire);
+    } else if (event.kind === "m2") {
+      applyM2(state, event.assertion);
     } else if (event.kind === "clearing") {
       applyAssertion(state, event.assertion);
+    } else if (event.kind === "write_down") {
+      applyWriteDown(state, event.assertion);
     } else {
       const _exhaustive: never = event;
       void _exhaustive;
@@ -178,12 +241,14 @@ export function makeClearingAssertion(
   };
 }
 
-/**
- * Deterministic cycle discovery.
- * - maxLen default 7 (mobile-safe)
- * - cycle key = rotate-to-min nodes joined by ">"
- * - sort: residual desc → length asc → cycle key lex (identical on all devices)
- */
+export function makeM2Assertion(actHash: Uint8Array, sigM2: Uint8Array, appliedAt?: number): M2Assertion {
+  return {
+    actHash,
+    sigM2,
+    appliedAt: appliedAt ?? Date.now(),
+  };
+}
+
 export function findCyclesFromState(state: State, maxLen = MAX_CYCLE_LEN): ClearingCycle[] {
   const adj = new Map<AgentId, Map<AgentId, number>>();
   for (const [key, weight] of state.edgeRemaining) {
@@ -218,7 +283,6 @@ export function findCyclesFromState(state: State, maxLen = MAX_CYCLE_LEN): Clear
     if (path.length > maxLen) return;
     const row = adj.get(current);
     if (!row) return;
-    // Deterministic neighbour order
     const neighbours = [...row.entries()].sort(([a], [b]) => a.localeCompare(b));
     for (const [next, weight] of neighbours) {
       if (weight <= 0) continue;
