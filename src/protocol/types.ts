@@ -66,6 +66,10 @@ export interface ClearingCycle {
 export interface ClearingResult {
   cycle: ClearingCycle;
   residual: number;
+  /** Author public key hex who asserted this clearing (local hypothesis). */
+  authorHex?: string;
+  /** true if author signature verified. */
+  signed?: boolean;
   applied: Array<{
     hashHex: string;
     from: string;
@@ -76,23 +80,21 @@ export interface ClearingResult {
   }>;
 }
 
-// ─── Canon 2.2: History as sole source of truth ──────────────────────────────
+// ─── History events ─────────────────────────────────────────────────────────
 
 /**
  * Counterparty acceptance of an act (M2).
- * Separate event — never mutates the prior act event (fixes initiator reload bug).
  */
 export interface M2Assertion {
-  /** Hash of the act body (same as Act.hash). */
   actHash: Uint8Array;
-  /** Ed25519 signature by `to` over actHash. */
   sigM2: Uint8Array;
-  /** Unix ms when recorded locally. */
   appliedAt: number;
 }
 
 /**
- * Historical fact of a multi-party clearing (local hypothesis unless signed — Stage B).
+ * Local clearing hypothesis (Stage B-a).
+ * Signed by the asserting agent only — NOT multi-party consensus.
+ * Counterparties may hold different residuals until they assert the same cycle.
  */
 export interface ClearingAssertion {
   version: 1;
@@ -100,16 +102,18 @@ export interface ClearingAssertion {
   residual: number;
   appliedAt: number;
   nonce: Uint8Array;
+  /** Author public key (32 bytes). Required for new assertions; optional for legacy. */
+  author?: Uint8Array | null;
+  /** Ed25519 signature over clearing body hash. */
+  sig?: Uint8Array | null;
   prevHash?: Uint8Array | null;
 }
 
 /**
- * Legacy migration only: reduce remaining on one act without a cycle
- * (preserves amount−remaining from old LedgerEntry).
+ * Legacy migration only: reduce remaining on one act without a cycle.
  */
 export interface WriteDownAssertion {
   actHash: Uint8Array;
-  /** Positive integer subtracted from remaining. */
   delta: number;
   appliedAt: number;
 }
@@ -129,6 +133,8 @@ export interface State {
   net: Map<AgentId, number>;
   openActs: Map<HashHex, Act>;
   acts: Map<HashHex, Act>;
+  /** Clearing assertions applied (for UI: local hypothesis badges). */
+  clearings: Array<{ residual: number; authorHex: string | null; signed: boolean; appliedAt: number }>;
 }
 
 export function emptyState(): State {
@@ -139,6 +145,7 @@ export function emptyState(): State {
     net: new Map(),
     openActs: new Map(),
     acts: new Map(),
+    clearings: [],
   };
 }
 
