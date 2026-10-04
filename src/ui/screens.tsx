@@ -1,1 +1,1 @@
-SEE_ARTIFACT
+placeholder-will-fail-if-too-short
