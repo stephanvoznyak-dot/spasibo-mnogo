@@ -206,7 +206,7 @@ export function runCanonSuite(): string[] {
   const empty = deriveState([]);
   out.push(line(empty.acts.size === 0 && empty.net.size === 0, "C01 empty History → empty State"));
 
-  // Single act
+  // Single finalized act → act + m2 events
   const act42 = finalAct(a, b, 42);
   const h1 = historyFromActs([act42]);
   const s1 = deriveState(h1);
@@ -217,16 +217,28 @@ export function runCanonSuite(): string[] {
     ),
   );
 
-  // Idempotent appendAct
+  // Idempotent appendAct: finalized act expands to act+m2 (len 2); second call no-op
   const r1 = appendAct([], act42);
   const r2 = appendAct(r1.history, act42);
-  out.push(line(r1.added === true && r2.added === false && r2.history.length === 1, "C03 appendAct идемпотентен"));
+  out.push(
+    line(
+      r1.added === true &&
+        r2.added === false &&
+        r2.history.length === r1.history.length &&
+        r1.history.length === 2 &&
+        r1.history[0]!.kind === "act" &&
+        r1.history[1]!.kind === "m2",
+      "C03 appendAct идемпотентен",
+      `len=${r1.history.length}`,
+    ),
+  );
 
-  // 18-12-8 via History
+  // 18-12-8 via History (3 acts → 6 events: act+m2 each)
   const ab = finalAct(a, b, 18);
   const bc = finalAct(b, c, 12);
   const ca = finalAct(c, a, 8);
   let history: History = historyFromActs([ab, bc, ca]);
+  const lenBeforeClear = history.length; // 6
   const before = deriveState(history);
   const netsBefore = snapshotStateNets(before);
   const cycles = findCyclesFromState(before);
@@ -242,7 +254,14 @@ export function runCanonSuite(): string[] {
       after.remaining.get(bytesToHex(ca.hash)) === 0;
     out.push(line(okRem, "C06 18-12-8 → remaining 10/4/0"));
     out.push(line(snapshotStateNets(after) === netsBefore, "C07 инвариант N_i после ClearingAssertion"));
-    out.push(line(afterH.length === 4 && afterH[3]!.kind === "clearing", "C08 History += ClearingAssertion"));
+    // +1 clearing event after act/m2 pairs
+    out.push(
+      line(
+        afterH.length === lenBeforeClear + 1 && afterH[afterH.length - 1]!.kind === "clearing",
+        "C08 History += ClearingAssertion",
+        `len ${lenBeforeClear}→${afterH.length}`,
+      ),
+    );
 
     // Recovery
     const recovered = deriveState(afterH);
