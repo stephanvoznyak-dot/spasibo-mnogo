@@ -1,5 +1,5 @@
 /**
- * Canon 2.2 — History as the sole source of truth.
+ * History API — append-only. Clearing is a local signed hypothesis (B-a).
  */
 import { bytesToHex } from "@/crypto/bytes";
 import { verifyAct } from "./act";
@@ -32,7 +32,6 @@ export function historyActHashes(history: History): Set<HashHex> {
   return set;
 }
 
-/** Append M1 act (idempotent by hash). */
 export function appendAct(
   history: History,
   act: Act,
@@ -46,20 +45,14 @@ export function appendAct(
     }
     return { history, state: deriveState(history), added: false };
   }
-  // Strip sigM2 from act event — M2 is a separate event
   const wire: Act = act.sigM2 ? { ...act, sigM2: null } : act;
   const next: History = [...history, { kind: "act", wire }];
-  // If original had M2, also append m2 event
   if (act.sigM2) {
-    next.push({
-      kind: "m2",
-      assertion: makeM2Assertion(act.hash, act.sigM2),
-    });
+    next.push({ kind: "m2", assertion: makeM2Assertion(act.hash, act.sigM2) });
   }
   return { history: next, state: deriveState(next), added: true };
 }
 
-/** Append M2 acceptance (idempotent by actHash). */
 export function appendM2(
   history: History,
   actHash: Uint8Array,
@@ -85,7 +78,12 @@ export function appendM2(
 export function appendClearing(
   history: History,
   cycle: ClearingCycle,
-  opts?: { appliedAt?: number; nonce?: Uint8Array },
+  opts?: {
+    appliedAt?: number;
+    nonce?: Uint8Array;
+    authorPublic?: Uint8Array;
+    authorSecret?: Uint8Array;
+  },
 ): { history: History; state: State; assertion: ClearingAssertion } {
   return deriveAppendClearing(history, cycle, opts);
 }
