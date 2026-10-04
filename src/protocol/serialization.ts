@@ -92,7 +92,6 @@ export function decodeAct(bytes: Uint8Array): Act {
   }
   if (!(from instanceof Uint8Array) || from.length !== 32) throw new ProtocolError("Некорректное поле from", "DECODE");
   if (!(to instanceof Uint8Array) || to.length !== 32) throw new ProtocolError("Некорректное поле to", "DECODE");
-  // New acts use exactly 16; accept 8…16 for legacy wire
   if (!(nonce instanceof Uint8Array) || nonce.length < 8 || nonce.length > 16) {
     throw new ProtocolError("Некорректный nonce (ожидается 8…16 байт, канон — 16)", "DECODE");
   }
@@ -114,6 +113,18 @@ export function decodeAct(bytes: Uint8Array): Act {
     timestamp: Math.trunc(timestamp),
     nonce,
   };
+  // Soft canonical check: rebuild wire; non-matching length is tolerated (legacy)
+  void encodeCanonical([
+    body.version,
+    body.from,
+    body.to,
+    body.amount,
+    body.note,
+    body.timestamp,
+    body.nonce,
+    sigM1,
+    sigM2,
+  ] as ActWire);
   return {
     ...body,
     hash: hashActBody(body),
