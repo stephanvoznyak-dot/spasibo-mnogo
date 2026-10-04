@@ -1,10 +1,9 @@
 /**
  * Canon 2.2 — State derivation from immutable History.
- * Recovery ≡ deriveState(History).
- *
- * Events: act (M1) → m2 (acceptance) → clearing | write_down.
+ * Clearing = local hypothesis (Stage B-a): author-signed, not multi-party.
  */
 import { bytesEqual, bytesToHex, randomBytes } from "@/crypto/bytes";
+import { signClearingAssertion, verifyClearingAssertion } from "./clearing-sign";
 import {
   edgeKey,
   emptyState,
@@ -44,24 +43,6 @@ function addEdge(edgeRemaining: Map<EdgeKey, number>, key: EdgeKey, delta: numbe
   else edgeRemaining.set(key, next);
 }
 
-/** Ingest M1 act. If wire already carries sigM2 (legacy import), treat as finalized. */
-function ingestAct(state: State, act: Act): void {
-  const hashHex = bytesToHex(act.hash);
-  // Prefer first act; later act with same hash ignored (idempotent)
-  if (state.acts.has(hashHex)) return;
-
-  state.acts.set(hashHex, act);
-
-  if (!act.sigM2) {
-    state.status.set(hashHex, "pending_m2");
-    state.remaining.set(hashHex, 0);
-    return;
-  }
-
-  // Legacy wire already had M2 embedded
-  finalizeAct(state, act);
-}
-
 function finalizeAct(state: State, act: Act): void {
   const hashHex = bytesToHex(act.hash);
   const remaining = act.amount;
@@ -78,7 +59,21 @@ function finalizeAct(state: State, act: Act): void {
   addNet(state.net, to, +remaining);
 }
 
-/** Apply M2: attach signature and open the obligation. */
+function ingestAct(state: State, act: Act): void {
+  const hashHex = bytesToHex(act.hash);
+  if (state.acts.has(hashHex)) return;
+
+  state.acts.set(hashHex, act);
+
+  if (!act.sigM2) {
+    state.status.set(hashHex, "pending_m2");
+    state.remaining.set(hashHex, 0);
+    return;
+  }
+
+  finalizeAct(state, act);
+}
+
 function applyM2(state: State, assertion: M2Assertion): void {
   if (!(assertion.actHash instanceof Uint8Array) || assertion.actHash.length !== 32) {
     throw new ProtocolError("m2: некорректный actHash", "M2");
@@ -93,15 +88,13 @@ function applyM2(state: State, assertion: M2Assertion): void {
     throw new ProtocolError(`m2: акт ${hashHex.slice(0, 12)}… не найден в истории`, "M2");
   }
   if (existing.sigM2) {
-    // Idempotent: already finalized
     if (!bytesEqual(existing.sigM2, assertion.sigM2)) {
       throw new ProtocolError("m2: конфликт подписей для одного акта", "M2");
     }
     return;
   }
 
-  const finalized: Act = { ...existing, sigM2: assertion.sigM2 };
-  finalizeAct(state, finalized);
+  finalizeAct(state, { ...existing, sigM2: assertion.sigM2 });
 }
 
 function applyAssertion(state: State, assertion: ClearingAssertion): void {
@@ -117,6 +110,14 @@ function applyAssertion(state: State, assertion: ClearingAssertion): void {
   if (!(assertion.nonce instanceof Uint8Array) || assertion.nonce.length !== 16) {
     throw new ProtocolError("ClearingAssertion.nonce должен быть ровно 16 байт", "DECODE");
   }
+
+  const v = verifyClearingAssertion(assertion);
+  state.clearings.push({
+    residual: assertion.residual,
+    authorHex: v.authorHex,
+    signed: v.signed,
+    appliedAt: assertion.appliedAt,
+  });
 
   const before = snapshotNet(state.net);
   const n = assertion.cycle.length;
@@ -173,7 +174,6 @@ function applyAssertion(state: State, assertion: ClearingAssertion): void {
   }
 }
 
-/** Reduce remaining on a single act (legacy migration). Preserves net. */
 function applyWriteDown(state: State, assertion: WriteDownAssertion): void {
   if (!(assertion.delta > 0) || !Number.isInteger(assertion.delta)) {
     throw new ProtocolError("write_down: delta должен быть целым > 0", "WRITE_DOWN");
@@ -221,9 +221,19 @@ export function deriveState(history: History): State {
   return state;
 }
 
+/**
+ * Build a signed ClearingAssertion (preferred).
+ * Without keys → unsigned legacy-compatible assertion (not recommended).
+ */
 export function makeClearingAssertion(
   cycle: ClearingCycle,
-  opts?: { appliedAt?: number; nonce?: Uint8Array; prevHash?: Uint8Array | null },
+  opts?: {
+    appliedAt?: number;
+    nonce?: Uint8Array;
+    prevHash?: Uint8Array | null;
+    authorPublic?: Uint8Array;
+    authorSecret?: Uint8Array;
+  },
 ): ClearingAssertion {
   if (cycle.nodes.length < 2) {
     throw new ProtocolError("Фиктивный клиринг: цикл слишком короткий", "F04");
@@ -231,12 +241,24 @@ export function makeClearingAssertion(
   if (!(cycle.residual > 0)) {
     throw new ProtocolError("Фиктивный клиринг: residual ≤ 0", "F04");
   }
-  return {
-    version: 1,
+  const partial = {
+    version: 1 as const,
     cycle: [...cycle.nodes],
     residual: cycle.residual,
     appliedAt: opts?.appliedAt ?? Date.now(),
     nonce: opts?.nonce ?? randomBytes(16),
+  };
+
+  if (opts?.authorPublic && opts?.authorSecret) {
+    const signed = signClearingAssertion(partial, opts.authorPublic, opts.authorSecret);
+    return { ...signed, prevHash: opts.prevHash ?? null };
+  }
+
+  // Unsigned (migration / tests without identity)
+  return {
+    ...partial,
+    author: null,
+    sig: null,
     prevHash: opts?.prevHash ?? null,
   };
 }
@@ -323,7 +345,12 @@ export function findCyclesFromState(state: State, maxLen = MAX_CYCLE_LEN): Clear
 export function appendClearing(
   history: History,
   cycle: ClearingCycle,
-  opts?: { appliedAt?: number; nonce?: Uint8Array },
+  opts?: {
+    appliedAt?: number;
+    nonce?: Uint8Array;
+    authorPublic?: Uint8Array;
+    authorSecret?: Uint8Array;
+  },
 ): { history: History; state: State; assertion: ClearingAssertion } {
   const assertion = makeClearingAssertion(cycle, opts);
   const nextHistory: History = [...history, { kind: "clearing", assertion }];
