@@ -1,5 +1,5 @@
 {
-  "name": "app-builder-workspace",
+  "name": "normal-project",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -18,7 +18,8 @@
     "check:auth": "node scripts/check-auth-invariant.mjs",
     "typecheck": "tsc --noEmit --pretty false",
     "test:protocol": "node scripts/protocol-test.mjs",
-    "test": "node --test 'scripts/**/*.test.mjs' && node --experimental-strip-types --test src/lib/app-data/app-data.test.ts src/lib/app-data/readiness-schedule.test.ts src/lib/auth/gate-identity.test.ts src/lib/auth/sign-in-gate.test.ts",
+    "test": "node --test 'scripts/**/*.test.mjs' && node --experimental-strip-types --test src/protocol/*.test.ts src/lib/app-data/app-data.test.ts src/lib/app-data/readiness-schedule.test.ts src/lib/auth/gate-identity.test.ts src/lib/auth/sign-in-gate.test.ts",
+    "test:canon": "node --experimental-strip-types --test src/protocol/*.test.ts",
     "lint": "eslint .",
     "format": "prettier --write .",
     "setup:ios": "node scripts/setup-ios.mjs",

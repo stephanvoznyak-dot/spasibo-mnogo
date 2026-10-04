@@ -8,16 +8,24 @@ const CANONICAL: EncodeOptions = {
   float64: true,
 };
 
+/** Upper bound aligned with PROTOCOL.md (§5.1). */
+export const MAX_AMOUNT = 1_000_000_000_000; // 10^12
+
+/**
+ * Strip C0 controls, DEL, and bidi/formatting controls (U+202A–202E, U+2066–2069).
+ */
 export function sanitizeNote(note: string): string {
-  return note.replace(/[\u0000-\u001f\u007f]/g, "").slice(0, 280);
+  return note
+    .replace(/[\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069]/g, "")
+    .slice(0, 280);
 }
 
 export function assertAmount(amount: unknown): number {
   if (typeof amount !== "number" || !Number.isInteger(amount) || amount < 1) {
     throw new ProtocolError("Сумма должна быть целым числом ≥ 1", "F03");
   }
-  if (amount > Number.MAX_SAFE_INTEGER) {
-    throw new ProtocolError("Сумма слишком велика", "F03");
+  if (amount > MAX_AMOUNT) {
+    throw new ProtocolError(`Сумма слишком велика (макс. ${MAX_AMOUNT})`, "F03");
   }
   return amount;
 }
@@ -84,8 +92,9 @@ export function decodeAct(bytes: Uint8Array): Act {
   }
   if (!(from instanceof Uint8Array) || from.length !== 32) throw new ProtocolError("Некорректное поле from", "DECODE");
   if (!(to instanceof Uint8Array) || to.length !== 32) throw new ProtocolError("Некорректное поле to", "DECODE");
+  // New acts use exactly 16; accept 8…16 for legacy wire
   if (!(nonce instanceof Uint8Array) || nonce.length < 8 || nonce.length > 16) {
-    throw new ProtocolError("Некорректный nonce", "DECODE");
+    throw new ProtocolError("Некорректный nonce (ожидается 8…16 байт, канон — 16)", "DECODE");
   }
   if (!(sigM1 instanceof Uint8Array) || sigM1.length !== 64) throw new ProtocolError("Некорректная подпись M1", "DECODE");
   if (sigM2 !== null && (!(sigM2 instanceof Uint8Array) || sigM2.length !== 64)) {

@@ -9,53 +9,49 @@
 
 | ID | Угроза | Защита |
 |----|--------|--------|
-| F01 | XSS из note / суммы / QR | React-экранирование, QR как data-URL, санитизация note, без `innerHTML`/`eval` |
-| F03 | Дробные / отрицательные суммы | `Number.isInteger(amount) && amount ≥ 1` |
+| F01 | XSS из note / суммы / QR | React-экранирование, QR как data-URL, санитизация note (+ bidi), без `innerHTML`/`eval` |
+| F03 | Дробные / отрицательные / слишком большие суммы | `Number.isInteger(amount) && 1 ≤ amount ≤ 10^12` |
 | F04 | Фиктивный клиринг | Отказ, если нет цикла / residual ≤ 0 / нет актов |
-| F05 | Двойной клиринг ребра | Сокращение только `remainingAmount` (legacy) / через ClearingAssertion (Canon 2.2) |
+| F05 | Двойной клиринг ребра | Только через History events (`clearing` / `write_down`) |
 | F06 | Подмена hash | Хеш всегда пересчитывается при verify |
-| F07 | Изменение полей после M1 | Подпись M1 стоит на каноническом теле; M2 подписывает тот же hash |
-| F08 | Молчаливые ошибки записи | Ошибки IndexedDB всплывают в UI |
-| QR_SIZE | Слишком большой QR payload | Лимит `QR_MAX_RAW_CHARS` / `QR_MAX_PAYLOAD_BYTES` до decode |
+| F07 | Изменение полей после M1 | Подпись M1 на каноническом теле; M2 — отдельное событие History |
+| F08 | Молчаливые ошибки записи | Ошибки IndexedDB / `deriveState` всплывают в UI (без silent fallback) |
+| QR_SIZE | Слишком большой QR payload | Лимит до decode |
 
 ## Секреты
 
 - Приватный ключ только в памяти процесса.
 - Мнемоника в IndexedDB в AES-GCM.
-- **PIN/пароль:** в `src/crypto/secret.ts` уже есть `encryptWithPassword` / `decryptWithPassword` (PBKDF2-SHA256, 210k итераций, AES-GCM). UI-обёртка (запрос PIN при старте) — следующий шаг; до этого wrapping key без пароля защищает от дампа localStorage, но не от XSS на той же origin.
-- Экспорт сид-фразы — двойное подтверждение и предупреждение.
+- **PIN/пароль:** в `src/crypto/secret.ts` есть `encryptWithPassword` / `decryptWithPassword` (PBKDF2-SHA256, 210k, AES-GCM). UI-обёртка (PIN при старте) — следующий шаг; до этого wrapping key без пароля не защищает от XSS на той же origin.
+- Экспорт сид-фразы — двойное подтверждение.
 - Секреты не пишутся в QR, JSON-экспорт, swarm `piece`, `console`.
 
-## История и состояние (Canon 2.2)
+## История и состояние
 
-- Источник истины: `History` (acts + ClearingAssertion), store `history` в IndexedDB.
-- `State` (= remaining, status, net) **не хранится** — вычисляется `deriveState(History)`.
-- Повторная доставка акта (QR/P2P): идемпотентный `appendAct` по hash.
-- Legacy store `acts` мигрирует один раз через `migrateLegacyActsToHistory()`.
+- Источник истины: **History** (`act` → `m2` → `clearing` | `write_down`).
+- `State` не хранится — `deriveState(History)`.
+- M2 — отдельное событие (не мутация act).
+- `appendHistoryEvent` — одна транзакция (атомарный seq).
+- Legacy `acts` мигрирует с `write_down` на `amount − remaining`.
+
+## Клиринг (этап B-a)
+
+- **Локальная гипотеза** узла: `ClearingAssertion` подписан **автором** (Ed25519).
+- Подпись проверяется при `deriveState`; legacy без author/sig допускается как unsigned.
+- Нетто-инвариант математически верен, **не** доказывает согласие контрагентов.
+- History разных устройств не сливается автоматически.
+- Не EOS / не PAL.
 
 ## Ограничения образца
 
-- Wrapping key без пароля защищает от дампа localStorage, но не от XSS на той же origin.
-- Рой HTML — вкладки одного origin.
+- Wrapping key без PIN не защищает от XSS на origin.
+- Рой HTML — вкладки одного origin (не P2P между телефонами).
 - Нет принудительного исполнения обязательств.
-- Очистка данных браузера уничтожает журнал.
-- Клиринг локальный и не подписывается остальными участниками цикла.
-- Подпись не содержит префикса протокола (domain separation).
-- Ключ выводится как первые 32 байта BIP-39 seed (не SLIP-0010).
-- Android-сборка должна быть release-подписанной и с `debuggable=false` (см. ANDROID_RELEASE.md).
+- Подпись акта без domain-separation prefix (смена потребует `ACT_VERSION++`).
+- Ключ = `seed[0..31]` (не SLIP-0010).
+- Android: распространяйте только release (`debuggable=false`) — см. ANDROID_RELEASE.md.
+- В репозитории остаётся каркас app-builder (лишние зависимости); реальное приложение — `src/standalone.tsx` / protocol / storage / ui.
 
 ## Рекомендации пользователю
 
-Использовать только на доверенном устройстве. Хранить сид-фразу на бумаге. Не сканировать QR из недоверенных источников, не показывая содержимое.
-
-## Обновление v1.3.3+
-
-Закрыто: зависание поиска циклов (MAX_CYCLE_LEN=7, детерминированный порядок); транзакционный клиринг через assertion; переполнение сумм; доверие к status/remaining из импорта; идемпотентность актов; лимит размера QR; History storage.
-
-В работе / рекомендуется:
-- UI-запрос PIN → `encryptWithPassword` для мнемоники;
-- Zod-схема QR (сейчас ручная assertQrShape + size limit);
-- Web Worker для поиска циклов на очень плотных графах;
-- Checkpoints / нативный SQLite на Android;
-- Анимированные QR (Fountain) при payload > ~1 КБ;
-- Прозрачные статусы акта в UI («ожидает M2», «зачтён» и т.д.).
+Только доверенное устройство. Сид-фраза на бумаге. Не сканировать недоверенные QR.
