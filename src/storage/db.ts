@@ -105,7 +105,9 @@ export async function loadIdentity(): Promise<{
   const db = await openDb();
   try {
     const tx = db.transaction(["identity", "keys"], "readonly");
-    const record = await reqToPromise(tx.objectStore("identity").get("current") as IDBRequest<StoredIdentity | undefined>);
+    const record = await reqToPromise(
+      tx.objectStore("identity").get("current") as IDBRequest<StoredIdentity | undefined>,
+    );
     const key = await reqToPromise(tx.objectStore("keys").get("wrap") as IDBRequest<CryptoKey | undefined>);
     await txDone(tx);
     if (!record || !key) return null;
@@ -128,122 +130,85 @@ export async function clearIdentity() {
   }
 }
 
-export async function wipeUserData() {
-  const db = await openDb();
-  try {
-    const names = ["identity", "keys", "acts", "contacts", "history", "meta"] as const;
-    const existing = names.filter((n) => db.objectStoreNames.contains(n));
-    const tx = db.transaction(existing, "readwrite");
-    for (const n of existing) tx.objectStore(n).clear();
-    await txDone(tx);
-  } finally {
-    db.close();
-  }
-}
-
-export { generateWrappingKey };
-
-interface StoredAct {
-  hashHex: string;
-  fromHex: string;
-  toHex: string;
-  timestamp: number;
-  status: ActStatus;
-  remainingAmount: number;
-  addedAt: number;
-  wire: Uint8Array;
-}
-
-function toStored(entry: LedgerEntry): StoredAct {
-  const remainingAmount = clampRemaining(entry.act.amount, entry.remainingAmount, Boolean(entry.act.sigM2));
-  return {
-    hashHex: bytesToHex(entry.act.hash),
-    fromHex: bytesToHex(entry.act.from),
-    toHex: bytesToHex(entry.act.to),
-    timestamp: entry.act.timestamp,
-    status: entry.status,
-    remainingAmount,
-    addedAt: entry.addedAt,
-    wire: encodeAct(entry.act),
-  };
-}
-
-function fromStored(row: StoredAct): LedgerEntry {
-  const act = decodeAct(row.wire);
-  verifyAct(act);
-  return {
-    act,
-    status: row.status,
-    remainingAmount: clampRemaining(act.amount, row.remainingAmount, Boolean(act.sigM2)),
-    addedAt: row.addedAt,
-  };
-}
-
-export async function putAct(entry: LedgerEntry): Promise<void> {
-  try {
-    verifyAct(entry.act);
-    const db = await openDb();
-    try {
-      const tx = db.transaction("acts", "readwrite");
-      tx.objectStore("acts").put(toStored(entry));
-      await txDone(tx);
-    } finally {
-      db.close();
-    }
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Неизвестная ошибка записи журнала";
-    throw new Error(`Журнал не записан: ${message}`);
-  }
-}
-
-export async function putActs(entries: LedgerEntry[]): Promise<void> {
-  try {
-    const db = await openDb();
-    try {
-      const tx = db.transaction("acts", "readwrite");
-      const store = tx.objectStore("acts");
-      for (const entry of entries) {
-        verifyAct(entry.act);
-        store.put(toStored(entry));
-      }
-      await txDone(tx);
-    } finally {
-      db.close();
-    }
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Неизвестная ошибка записи журнала";
-    throw new Error(`Журнал не записан: ${message}`);
-  }
-}
-
 export async function loadActs(): Promise<LedgerEntry[]> {
   const db = await openDb();
   try {
     const tx = db.transaction("acts", "readonly");
     const rows = await reqToPromise(tx.objectStore("acts").getAll() as IDBRequest<StoredAct[]>);
     await txDone(tx);
-    const entries: LedgerEntry[] = [];
+    const out: LedgerEntry[] = [];
     for (const row of rows ?? []) {
       try {
-        entries.push(fromStored(row));
-      } catch (err) {
-        console.warn("Акт не прошёл проверку целостности", row.hashHex, err);
+        const act = decodeAct(hexToBytes(row.wireHex));
+        verifyAct(act);
+        const remainingAmount = clampRemaining(act.amount, row.remainingAmount);
+        out.push({
+          act,
+          status: row.status as ActStatus,
+          remainingAmount,
+          addedAt: row.addedAt,
+        });
+      } catch {
+        /* skip corrupt */
       }
     }
-    entries.sort((a, b) => a.act.timestamp - b.act.timestamp || a.addedAt - b.addedAt);
-    return entries;
+    return out.sort((a, b) => a.act.timestamp - b.act.timestamp);
   } finally {
     db.close();
   }
 }
 
-export async function saveContacts(contacts: Contact[]): Promise<void> {
+interface StoredAct {
+  hashHex: string;
+  wireHex: string;
+  status: string;
+  remainingAmount: number;
+  addedAt: number;
+  timestamp: number;
+  fromHex: string;
+  toHex: string;
+}
+
+export async function putAct(entry: LedgerEntry): Promise<void> {
+  const hashHex = bytesToHex(entry.act.hash);
+  const row: StoredAct = {
+    hashHex,
+    wireHex: bytesToHex(encodeAct(entry.act)),
+    status: entry.status,
+    remainingAmount: entry.remainingAmount,
+    addedAt: entry.addedAt,
+    timestamp: entry.act.timestamp,
+    fromHex: bytesToHex(entry.act.from),
+    toHex: bytesToHex(entry.act.to),
+  };
   const db = await openDb();
   try {
-    const tx = db.transaction("contacts", "readwrite");
-    const store = tx.objectStore("contacts");
-    store.clear();
-    for (const c of contacts) store.put(c);
+    const tx = db.transaction("acts", "readwrite");
+    tx.objectStore("acts").put(row);
+    await txDone(tx);
+  } finally {
+    db.close();
+  }
+}
+
+export async function putActs(entries: LedgerEntry[]): Promise<void> {
+  const db = await openDb();
+  try {
+    const tx = db.transaction("acts", "readwrite");
+    const store = tx.objectStore("acts");
+    for (const entry of entries) {
+      const hashHex = bytesToHex(entry.act.hash);
+      store.put({
+        hashHex,
+        wireHex: bytesToHex(encodeAct(entry.act)),
+        status: entry.status,
+        remainingAmount: entry.remainingAmount,
+        addedAt: entry.addedAt,
+        timestamp: entry.act.timestamp,
+        fromHex: bytesToHex(entry.act.from),
+        toHex: bytesToHex(entry.act.to),
+      } satisfies StoredAct);
+    }
     await txDone(tx);
   } finally {
     db.close();
@@ -257,6 +222,19 @@ export async function loadContacts(): Promise<Contact[]> {
     const rows = await reqToPromise(tx.objectStore("contacts").getAll() as IDBRequest<Contact[]>);
     await txDone(tx);
     return rows ?? [];
+  } finally {
+    db.close();
+  }
+}
+
+export async function saveContacts(contacts: Contact[]): Promise<void> {
+  const db = await openDb();
+  try {
+    const tx = db.transaction("contacts", "readwrite");
+    const store = tx.objectStore("contacts");
+    store.clear();
+    for (const c of contacts) store.put(c);
+    await txDone(tx);
   } finally {
     db.close();
   }
@@ -285,60 +263,91 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
   }
 }
 
-export async function appendEvent(event: Record<string, unknown>): Promise<void> {
+export async function exportLedgerJson(): Promise<string> {
+  const acts = await loadActs();
+  return JSON.stringify(
+    {
+      v: 1,
+      acts: acts.map((e) => ({
+        wireHex: bytesToHex(encodeAct(e.act)),
+        status: e.status,
+        remainingAmount: e.remainingAmount,
+        addedAt: e.addedAt,
+      })),
+    },
+    null,
+    2,
+  );
+}
+
+export async function importLedgerJson(json: string): Promise<LedgerEntry[]> {
+  const parsed = JSON.parse(json) as { acts?: Array<Record<string, unknown>> };
+  if (!Array.isArray(parsed.acts)) throw new Error("Некорректный экспорт");
+  const out: LedgerEntry[] = [];
+  for (const row of parsed.acts) {
+    if (typeof row.wireHex !== "string") continue;
+    const act = decodeAct(hexToBytes(row.wireHex));
+    verifyAct(act);
+    const remainingAmount = clampRemaining(
+      act.amount,
+      typeof row.remainingAmount === "number" ? row.remainingAmount : act.amount,
+    );
+    out.push({
+      act,
+      status: (typeof row.status === "string" ? row.status : "finalized") as ActStatus,
+      remainingAmount,
+      addedAt: typeof row.addedAt === "number" ? row.addedAt : Date.now(),
+    });
+  }
+  return out;
+}
+
+export async function wipeUserData(): Promise<void> {
   const db = await openDb();
   try {
-    const tx = db.transaction("events", "readwrite");
-    tx.objectStore("events").add({ ...event, at: Date.now() });
+    const names = ["identity", "keys", "acts", "contacts", "history", "meta", "settings"] as const;
+    const existing = names.filter((n) => db.objectStoreNames.contains(n));
+    if (existing.length === 0) return;
+    const tx = db.transaction([...existing], "readwrite");
+    for (const n of existing) tx.objectStore(n).clear();
     await txDone(tx);
   } finally {
     db.close();
   }
 }
 
-export async function exportLedgerJson(entries: LedgerEntry[]): Promise<string> {
-  const acts = entries.map((e) => ({
-    hash: bytesToHex(e.act.hash),
-    from: bytesToHex(e.act.from),
-    to: bytesToHex(e.act.to),
-    amount: e.act.amount,
-    note: e.act.note,
-    timestamp: e.act.timestamp,
-    nonce: bytesToHex(e.act.nonce),
-    sigM1: bytesToHex(e.act.sigM1),
-    sigM2: e.act.sigM2 ? bytesToHex(e.act.sigM2) : null,
-    status: e.status,
-    remainingAmount: e.remainingAmount,
-  }));
-  return JSON.stringify({ proto: "normal-project", ver: 1, exportedAt: Date.now(), acts }, null, 2);
+export { generateWrappingKey };
+
+export async function saveMeta(key: string, value: unknown): Promise<void> {
+  const db = await openDb();
+  try {
+    const tx = db.transaction("meta", "readwrite");
+    tx.objectStore("meta").put(value, key);
+    await txDone(tx);
+  } finally {
+    db.close();
+  }
 }
 
-export function importLedgerJson(json: string): LedgerEntry[] {
-  const data = JSON.parse(json) as { acts?: Array<Record<string, unknown>> };
-  if (!Array.isArray(data.acts)) throw new Error("Файл журнала повреждён");
-  return data.acts.map((row) => {
-    const act: Act = {
-      version: 1,
-      from: hexToBytes(String(row.from)),
-      to: hexToBytes(String(row.to)),
-      amount: Number(row.amount),
-      note: String(row.note ?? ""),
-      timestamp: Number(row.timestamp),
-      nonce: hexToBytes(String(row.nonce)),
-      hash: hexToBytes(String(row.hash ?? "00".repeat(32))),
-      sigM1: hexToBytes(String(row.sigM1)),
-      sigM2: row.sigM2 ? hexToBytes(String(row.sigM2)) : null,
-    };
-    verifyAct(act);
-    return {
-      act,
-      status: (row.status as ActStatus) ?? (act.sigM2 ? "finalized" : "pending_m2"),
-      remainingAmount: clampRemaining(
-        act.amount,
-        Number(row.remainingAmount ?? (act.sigM2 ? act.amount : 0)),
-        Boolean(act.sigM2),
-      ),
-      addedAt: Date.now(),
-    };
-  });
+export async function loadMeta<T = unknown>(key: string): Promise<T | null> {
+  const db = await openDb();
+  try {
+    const tx = db.transaction("meta", "readonly");
+    const row = await reqToPromise(tx.objectStore("meta").get(key) as IDBRequest<T | undefined>);
+    await txDone(tx);
+    return row ?? null;
+  } finally {
+    db.close();
+  }
+}
+
+export async function deleteMeta(key: string): Promise<void> {
+  const db = await openDb();
+  try {
+    const tx = db.transaction("meta", "readwrite");
+    tx.objectStore("meta").delete(key);
+    await txDone(tx);
+  } finally {
+    db.close();
+  }
 }
