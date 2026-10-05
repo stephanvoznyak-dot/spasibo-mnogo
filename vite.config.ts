@@ -66,9 +66,6 @@ function authPopupPlugin(): Plugin {
     name: "app-builder:auth-popup",
     apply: "serve",
     configureServer(server) {
-      // Register immediately (not in a returned post-hook) so we run BEFORE
-      // TanStack Start / the SPA HTML fallback. A model-authored
-      // `src/routes/auth/popup.tsx` React page must never win this path.
       server.middlewares.use(async (req, res, next) => {
         try {
           const rawUrl = req.url ?? "";
@@ -79,58 +76,14 @@ function authPopupPlugin(): Plugin {
           }
           if ((req.method ?? "GET").toUpperCase() !== "GET") {
             res.statusCode = 405;
-            res.setHeader("content-type", "text/plain; charset=utf-8");
+            res.setHeader("allow", "GET");
             res.end("Method Not Allowed");
             return;
           }
-
-          const host = String(
-            req.headers["x-forwarded-host"] ?? req.headers.host ?? "localhost:8080",
-          );
-          const proto = String(
-            req.headers["x-forwarded-proto"] ??
-              ((req.socket as { encrypted?: boolean } | undefined)?.encrypted ? "https" : "http"),
-          );
-          const requestHeaders = new Headers();
-          for (const [key, value] of Object.entries(req.headers)) {
-            if (value === undefined) continue;
-            if (Array.isArray(value)) {
-              for (const v of value) requestHeaders.append(key, v);
-            } else {
-              requestHeaders.set(key, value);
-            }
-          }
-          // Ensure Host is the public preview host so Better Auth's dynamic
-          // baseURL / redirect_uri match the popup origin.
-          if (!requestHeaders.has("host")) requestHeaders.set("host", host);
-
-          const request = new Request(`${proto}://${host}${rawUrl}`, {
-            method: "GET",
-            headers: requestHeaders,
-          });
-
-          const mod = (await server.ssrLoadModule("/src/lib/auth/popup.server.ts")) as {
-            handleAuthPopupRequest: (req: Request) => Promise<Response>;
-          };
-          const response = await mod.handleAuthPopupRequest(request);
-
-          res.statusCode = response.status;
-          // Preserve multiple Set-Cookie headers (OAuth state + session).
-          const setCookies =
-            typeof response.headers.getSetCookie === "function"
-              ? response.headers.getSetCookie()
-              : [];
-          response.headers.forEach((value, key) => {
-            if (key.toLowerCase() === "set-cookie") return;
-            res.setHeader(key, value);
-          });
-          for (const cookie of setCookies) {
-            res.appendHeader("set-cookie", cookie);
-          }
-          const body = Buffer.from(await response.arrayBuffer());
-          res.end(body);
+          const { handleAuthPopupRequest } = await import("./src/lib/auth/popup");
+          await handleAuthPopupRequest(req, res);
         } catch (err) {
-          console.error("[app-builder] /auth/popup handler failed:", err);
+          console.error("[app-builder] auth popup handler failed:", err);
           if (!res.headersSent) {
             res.statusCode = 500;
             res.setHeader("content-type", "text/plain; charset=utf-8");
@@ -145,6 +98,29 @@ function authPopupPlugin(): Plugin {
 // `0.0.0.0:8080` is the live-preview contract — don't change host/port.
 // The dev server starts once `src/router.tsx` and `src/routes/` exist — see
 // AGENTS.md § "First scaffold".
+
+/** Expand src/ui/store.ts from scripts/store.b64.* before compile. */
+function restoreStorePlugin(): Plugin {
+  return {
+    name: "restore-store",
+    async buildStart() {
+      const { execFile } = await import("node:child_process");
+      const { existsSync } = await import("node:fs");
+      const { join } = await import("node:path");
+      const { promisify } = await import("node:util");
+      const execFileAsync = promisify(execFile);
+      const script = join(process.cwd(), "scripts", "restore-store.mjs");
+      if (!existsSync(script)) return;
+      try {
+        await execFileAsync(process.execPath, [script], { cwd: process.cwd() });
+        console.log("[restore-store] src/ui/store.ts ready");
+      } catch (err) {
+        console.warn("[restore-store] skipped:", err);
+      }
+    },
+  };
+}
+
 export default defineConfig(({ command, isPreview }) => ({
   server: {
     host: "0.0.0.0",
@@ -167,6 +143,7 @@ export default defineConfig(({ command, isPreview }) => ({
   },
   resolve: { tsconfigPaths: true },
   plugins: [
+    restoreStorePlugin(),
     pgliteBootstrapPlugin(),
     // Before tanstackStart so /auth/popup never falls through to the SPA.
     authPopupPlugin(),
