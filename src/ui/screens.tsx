@@ -6,6 +6,7 @@ import { LabScreen } from "./lab-screen";
 import { type MsgKey } from "./i18n";
 import { useApp, type Screen } from "./store";
 import { useT } from "./screens-helpers";
+import { BootScreen, Onboarding } from "./screens-onboarding";
 import { HomeScreen } from "./screens-home";
 import { CreateScreen } from "./screens-create";
 import { QrScreen } from "./screens-qr";
@@ -16,7 +17,7 @@ import { ClearingScreen } from "./screens-clearing";
 import { ContactsScreen } from "./screens-contacts";
 import { SettingsScreen } from "./screens-settings";
 
-export { BootScreen, Onboarding } from "./screens-onboarding";
+export { BootScreen, Onboarding };
 
 const TABS: Array<{ id: Screen; icon: typeof Home; key: MsgKey }> = [
   { id: "home", icon: Home, key: "home" },
@@ -92,13 +93,7 @@ export function AppRoot() {
   useEffect(() => {
     void boot();
   }, [boot]);
-  if (!ready) {
-    const { BootScreen } = require("./screens-onboarding") as typeof import("./screens-onboarding");
-    return <BootScreen />;
-  }
-  if (!identity) {
-    const { Onboarding } = require("./screens-onboarding") as typeof import("./screens-onboarding");
-    return <Onboarding />;
-  }
+  if (!ready) return <BootScreen />;
+  if (!identity) return <Onboarding />;
   return <Shell />;
 }
