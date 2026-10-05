@@ -3,9 +3,11 @@ import { describeAct as describeActFn } from "@/protocol/act";
 import { counterparties as counterpartiesFn } from "@/protocol/graph";
 
 /**
- * Temporary stub. Restore full store:
- *   cp artifacts/store-with-pin.ts src/ui/store.ts
- * or: git show c59fce9e:src/ui/store.ts > src/ui/store.ts
+ * Temporary stub. Full store (PIN + History) is restored with:
+ *
+ *   npm run restore:store
+ *
+ * Then commit the generated src/ui/store.ts.
  */
 export type Screen =
   | "home"
@@ -39,7 +41,8 @@ export interface QrPayload {
 
 export const DUAL_WRITE_LEGACY = true;
 
-const STUB = "Restore src/ui/store.ts from store-with-pin.ts (project artifacts) or git show c59fce9e:src/ui/store.ts";
+const STUB =
+  "Запустите: npm run restore:store  →  затем commit src/ui/store.ts";
 
 export const useApp = create(() => ({
   ready: true,
