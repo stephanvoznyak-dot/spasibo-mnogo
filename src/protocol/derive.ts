@@ -22,6 +22,8 @@ import {
 } from "./types";
 
 export const MAX_CYCLE_LEN = 7;
+/** Soft budget for DFS expansions (mobile main thread). */
+export const MAX_CYCLE_STEPS = 50_000;
 
 function snapshotNet(net: Map<AgentId, number>): string {
   return [...net.entries()]
@@ -221,10 +223,6 @@ export function deriveState(history: History): State {
   return state;
 }
 
-/**
- * Build a signed ClearingAssertion (preferred).
- * Without keys → unsigned legacy-compatible assertion (not recommended).
- */
 export function makeClearingAssertion(
   cycle: ClearingCycle,
   opts?: {
@@ -254,7 +252,6 @@ export function makeClearingAssertion(
     return { ...signed, prevHash: opts.prevHash ?? null };
   }
 
-  // Unsigned (migration / tests without identity)
   return {
     ...partial,
     author: null,
@@ -271,7 +268,11 @@ export function makeM2Assertion(actHash: Uint8Array, sigM2: Uint8Array, appliedA
   };
 }
 
-export function findCyclesFromState(state: State, maxLen = MAX_CYCLE_LEN): ClearingCycle[] {
+export function findCyclesFromState(
+  state: State,
+  maxLen = MAX_CYCLE_LEN,
+  maxSteps = MAX_CYCLE_STEPS,
+): ClearingCycle[] {
   const adj = new Map<AgentId, Map<AgentId, number>>();
   for (const [key, weight] of state.edgeRemaining) {
     if (weight <= 0) continue;
@@ -291,6 +292,7 @@ export function findCyclesFromState(state: State, maxLen = MAX_CYCLE_LEN): Clear
     (a, b) => a.localeCompare(b),
   );
   const found = new Map<string, ClearingCycle>();
+  let steps = 0;
 
   function rotateToMin(path: string[]): string[] {
     if (path.length === 0) return path;
@@ -302,6 +304,7 @@ export function findCyclesFromState(state: State, maxLen = MAX_CYCLE_LEN): Clear
   }
 
   function dfs(start: string, current: string, path: string[], visited: Set<string>) {
+    if (++steps > maxSteps) return;
     if (path.length > maxLen) return;
     const row = adj.get(current);
     if (!row) return;

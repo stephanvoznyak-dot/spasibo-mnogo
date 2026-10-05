@@ -46,8 +46,17 @@ export function allTutorialAgents() {
   return cached;
 }
 
-/** Пароль лаборатории — телефон автора. Не светим в UI. */
+/**
+ * Lab unlock codes (not shown in UI).
+ * - digits of author phone (compat)
+ * - fixed demo token "lab-demo" (preferred for teaching)
+ */
+const LAB_DIGIT_CODES = new Set(["79036060006", "89036060006", "9036060006"]);
+const LAB_TOKEN = "lab-demo";
+
 export function checkLabPassword(input: string): boolean {
+  const trimmed = input.trim().toLowerCase();
+  if (trimmed === LAB_TOKEN) return true;
   const digits = input.replace(/\D/g, "");
-  return digits === "79036060006" || digits === "89036060006" || digits === "9036060006";
+  return LAB_DIGIT_CODES.has(digits);
 }
