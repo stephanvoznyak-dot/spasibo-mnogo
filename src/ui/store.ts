@@ -1,10 +1,11 @@
 import { create } from "zustand";
-import { counterparties as counterpartiesFn, describeAct as describeActFn } from "@/protocol/graph";
+import { describeAct as describeActFn } from "@/protocol/act";
+import { counterparties as counterpartiesFn } from "@/protocol/graph";
 
 /**
- * Temporary stub after accidental PLACEHOLDER push.
- * Full implementation: project artifacts `store-with-pin.ts` (PIN + dual-write)
- * or `store-base.ts` (pre-PIN). Copy to src/ui/store.ts and commit.
+ * Temporary stub. Restore full store:
+ *   cp artifacts/store-with-pin.ts src/ui/store.ts
+ * or: git show c59fce9e:src/ui/store.ts > src/ui/store.ts
  */
 export type Screen =
   | "home"
@@ -38,7 +39,7 @@ export interface QrPayload {
 
 export const DUAL_WRITE_LEGACY = true;
 
-const STUB = "Скопируйте artifacts/store-with-pin.ts → src/ui/store.ts";
+const STUB = "Restore src/ui/store.ts from store-with-pin.ts (project artifacts) or git show c59fce9e:src/ui/store.ts";
 
 export const useApp = create(() => ({
   ready: true,
