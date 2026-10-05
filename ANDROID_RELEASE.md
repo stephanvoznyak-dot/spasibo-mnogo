@@ -2,6 +2,8 @@
 
 В проверенном APK 1.2.0 были `debuggable=true` и подпись «Android Debug». Так раздавать нельзя.
 
+**Debug-сборки** помечайте в UI/README крупно: «НЕ ДЛЯ ПРОДАКШЕНА / DEBUG».
+
 ## 1. Ключ подписи (один раз, хранить вне репозитория)
 ```
 keytool -genkeypair -v -keystore spasibo-release.jks -alias spasibo \
@@ -26,10 +28,14 @@ android {
       minifyEnabled false
       signingConfig signingConfigs.release
     }
+    debug {
+      debuggable true
+      // Не публиковать debug APK как «релиз»
+    }
   }
 }
 ```
-`versionName` = `APP_VERSION` из `src/version.ts` (сейчас 1.3.3), `versionCode` увеличивать на 1 при каждом релизе.
+`versionName` = `APP_VERSION` из `src/version.ts` (**1.3.5**), `versionCode` увеличивать на 1 при каждом релизе (сейчас 5).
 
 ## 3. Сборка
 ```
@@ -38,13 +44,6 @@ cd android && ./gradlew assembleRelease
 ```
 
 ## 4. Проверка перед публикацией
-```
-apksigner verify --verbose --print-certs app-release.apk
-aapt2 dump badging app-release.apk | grep -E "versionName|debuggable"   # debuggable быть не должно
-```
-
-## 5. Лишнее убрать (проверить на устройстве после удаления)
-- `public/__grok/` (ассеты Grok) не должны попадать в `android-www`.
-- Плагин `@capacitor/camera` не нужен: сканирование идёт через `getUserMedia`.
-- Разрешение INTERNET приложению не нужно (всё грузится из assets): `<uses-permission android:name="android.permission.INTERNET" tools:node="remove" />`.
-- Кнопки скачивания APK/ZIP внутри APK бесполезны (файлов в нём нет): скрывать в сборке для Android.
+- `aapt dump badging app-release.apk | grep debuggable` → не должно быть `debuggable='true'`
+- Подпись release, не Android Debug
+- versionName совпадает с APP_VERSION

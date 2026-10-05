@@ -1,38 +1,35 @@
-# ROADMAP — остаток после A / B-a / C
+# ROADMAP
 
-## Сделано (1.3.4)
+## Сделано (1.3.4 → 1.3.5)
 
-- History: act → m2 → clearing | write_down; атомарный append; миграция remaining
-- Клиринг = локальная гипотеза с подписью автора (не PAL / не EOS)
-- Limits: amount ≤ 10¹², bidi в note, MAX_CYCLE_LEN=7, MAX_CYCLE_STEPS
-- Экспорт History v2; protocol tests в `npm test` / `test:canon`
-- Android versionName 1.3.4; PIN helper `src/crypto/pin-session.ts`
-- UI: подсказка «клиринг локальный…»
+- **A** History: act → m2 → clearing | write_down; атомарный append; миграция
+- **B-a** Клиринг = локальная гипотеза + подпись автора
+- **C** limits (10¹², bidi), protocol tests, MAX_CYCLE_LEN=7, **MAX_CYCLE_STEPS=50_000**
+- Lab: `lab-demo` + телефон автора (compat)
+- Domain prefixes задокументированы в `src/crypto/domain.ts` (ACT_VERSION 1 без смены wire)
+- PIN API + UI-заготовки; dual-write флаг `DUAL_WRITE_LEGACY`
+- UI modules + clearingLocalHint
 
-## Сознательно отложено
+## Критично (сделать сейчас)
 
-### B-б — многосторонний клиринг
-Подписи всех узлов цикла, протокол сбора (QR-круг / P2P), слияние History.  
-Это отдельный протокол (ближе к EOS PAL §5.6), не «доделка» Варика.
+### Восстановить `src/ui/store.ts`
+После сбоя push файл на main — stub. Полные варианты в артефактах проекта:
+- `store-with-pin.ts` — с PIN lock/unlock + history-first persist
+- `store-base.ts` — до PIN
 
-### Domain separation подписи акта
-Префикс `"normal-project/act/v1"` потребует `ACT_VERSION = 2` и инвалидирует все существующие акты.  
-Вводить только вместе с версионированием wire и миграцией.
+```bash
+cp store-with-pin.ts src/ui/store.ts   # из артефактов сессии
+# или git show c59fce9e:src/ui/store.ts > src/ui/store.ts
+git add src/ui/store.ts && git commit -m "restore store.ts"
+```
 
-### Полная чистка app-builder
-Удаление `server/`, `src/lib/auth`, better-auth, pglite, nitro, 20× radix — ломка текущего `vite`/`scripts/with-app-env`.  
-Отдельный PR: упрощённый `vite.config` + `build:standalone` как единственный путь.
+## Ещё открыто
 
-### Dual-write legacy `acts`
-Пока dual-write для swarm/export. Убрать после 1–2 релизов только-History.
-
-### PIN в UI
-API: `sealMnemonicWithPin` / `openMnemonicWithPin`.  
-Нужен экран Settings → «Задать PIN» / «Разблокировать» и запись blob в IndexedDB settings.
-
-## Рекомендуемый порядок
-1. PIN UI (день)
-2. Упрощённый vite standalone-only (1–2 дня)
-3. Снятие dual-write
-4. ACT_VERSION 2 + domain separation (по необходимости совместимости)
-5. B-б только при продуктовой необходимости
+| Пункт | Статус |
+|-------|--------|
+| PIN UI wired to full store | после restore store |
+| Dual-write off (`DUAL_WRITE_LEGACY=false`) | после 1–2 релизов только-History |
+| Чистка app-builder / vite standalone-only | отдельный PR |
+| Domain separation ACT_VERSION=2 | ломает старые акты |
+| B-б многосторонний клиринг | отдельный протокол |
+| Общий openDb | низкий приоритет |
