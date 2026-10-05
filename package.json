@@ -21,6 +21,7 @@
     "test": "node --test 'scripts/**/*.test.mjs' && node --experimental-strip-types --test src/protocol/*.test.ts src/lib/app-data/app-data.test.ts src/lib/app-data/readiness-schedule.test.ts src/lib/auth/gate-identity.test.ts src/lib/auth/sign-in-gate.test.ts",
     "test:canon": "node --experimental-strip-types --test src/protocol/*.test.ts",
     "restore:store": "node scripts/restore-store.mjs",
+    "postinstall": "node scripts/restore-store.mjs",
     "lint": "eslint .",
     "format": "prettier --write .",
     "setup:ios": "node scripts/setup-ios.mjs",
