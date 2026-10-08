@@ -92,9 +92,7 @@ export function ScanScreen() {
           variant="secondary"
           onClick={() => {
             void captureQrPhoto()
-              .then(async (blob) => {
-                if (!blob) return;
-                const code = await detectQrFromBlob(blob);
+              .then(async (code) => {
                 if (code) await handleRaw(code);
               })
               .catch((err: unknown) => setError(err instanceof Error ? err.message : "Ошибка"));

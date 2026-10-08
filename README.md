@@ -7,11 +7,22 @@
 (нет JCS, SLIP-0010, PAL). Не выдавайте записи журнала за SharedRecord EOS.
 
 Репозиторий: [github.com/stephanvoznyak-dot/spasibo-mnogo](https://github.com/stephanvoznyak-dot/spasibo-mnogo)  
-Релизы (APK / HTML / ZIP): [releases](https://github.com/stephanvoznyak-dot/spasibo-mnogo/releases)  
+Релизы (APK / HTML / ZIP / Xcode): [releases](https://github.com/stephanvoznyak-dot/spasibo-mnogo/releases)  
 Канал: [t.me/+buaSHWKuVTY2ZmNi](https://t.me/+buaSHWKuVTY2ZmNi)  
 Автор концепции: **Ларионов Пётр** · +7 903 606-00-06 · [@Peterlarionov](https://t.me/Peterlarionov)
 
-Версия **1.3.3**.
+Версия **1.3.6**.
+
+## Скачать
+
+| Файл | |
+|------|--|
+| Android APK | [normal-project.apk](https://github.com/stephanvoznyak-dot/spasibo-mnogo/releases/latest/download/normal-project.apk) |
+| Офлайн HTML | [normal-project.html](https://github.com/stephanvoznyak-dot/spasibo-mnogo/releases/latest/download/normal-project.html) |
+| Исходники ZIP | [normal-project-src.zip](https://github.com/stephanvoznyak-dot/spasibo-mnogo/releases/latest/download/normal-project-src.zip) |
+| Xcode / iOS | [normal-project-ios.zip](https://github.com/stephanvoznyak-dot/spasibo-mnogo/releases/latest/download/normal-project-ios.zip) · [IOS_BUILD.md](IOS_BUILD.md) |
+
+В приложении кнопки **Скачать** на экране входа, на главной и в «Ещё».
 
 ## Что умеет
 
@@ -36,16 +47,17 @@ State = deriveState(History)
 
 ```
 npm install
+npm run restore:store
 npm run dev
-npm run test:protocol
-node --experimental-strip-types --test src/protocol/*.test.ts
+npm run test:canon
 ```
 
 ## Сборки
 
 - HTML: `npm run build:standalone` → `public/downloads/normal-project.html`
-- Android: см. [ANDROID_RELEASE.md](ANDROID_RELEASE.md) — **debug APK не для реального использования**
-- iOS: [IOS_BUILD.md](IOS_BUILD.md)
+- Android: см. [ANDROID_RELEASE.md](ANDROID_RELEASE.md) — debug APK не для магазина
+- iOS / Xcode: `npm run setup:ios` затем `npx cap open ios` — [IOS_BUILD.md](IOS_BUILD.md)
+- Пакет загрузок: `npm run pack:downloads`
 
 ## Документы
 

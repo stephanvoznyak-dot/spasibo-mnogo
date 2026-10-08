@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { BookOpen, GitBranch, Home, Radio, ScanLine, Settings } from "lucide-react";
+import { useEffect, useState } from "react";
+import { BookOpen, Download, GitBranch, Home, Radio, ScanLine, Settings } from "lucide-react";
 import { APP_PRODUCT } from "@/version";
 import { GuideScreen } from "./guide-screens";
 import { LabScreen } from "./lab-screen";
@@ -16,6 +16,7 @@ import { DetailScreen } from "./screens-detail";
 import { ClearingScreen } from "./screens-clearing";
 import { ContactsScreen } from "./screens-contacts";
 import { SettingsScreen } from "./screens-settings";
+import { DownloadButtons } from "./downloads";
 
 export { BootScreen, Onboarding };
 
@@ -34,17 +35,34 @@ export function Shell() {
   const error = useApp((s) => s.error);
   const swarmPeers = useApp((s) => s.swarmPeers);
   const tr = useT();
+  const [downloadsOpen, setDownloadsOpen] = useState(false);
   return (
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col bg-bg text-fg">
-      <header className="flex items-center justify-between border-b border-border px-4 py-3">
-        <div>
+      <header className="relative flex items-center justify-between gap-2 border-b border-border px-4 py-3">
+        <div className="min-w-0">
           <p className="font-serif text-xl leading-none">{APP_PRODUCT}</p>
-          <p className="mt-1 font-mono text-[11px] text-muted">{identity.fingerprint}</p>
+          <p className="mt-1 truncate font-mono text-[11px] text-muted">{identity.fingerprint}</p>
         </div>
-        <div className="flex items-center gap-2 text-[11px] text-muted">
-          <Radio className="size-3.5" />
-          {swarmPeers} {tr("peers")}
+        <div className="flex shrink-0 items-center gap-2 text-[11px] text-muted">
+          <span className="flex items-center gap-1">
+            <Radio className="size-3.5" />
+            {swarmPeers} {tr("peers")}
+          </span>
+          <button
+            type="button"
+            className="inline-flex min-h-11 items-center gap-1 rounded-md border border-border bg-surface px-3 text-xs font-medium text-fg"
+            onClick={() => setDownloadsOpen((v) => !v)}
+            aria-expanded={downloadsOpen}
+          >
+            <Download className="size-4" /> {tr("download")}
+          </button>
         </div>
+        {downloadsOpen && (
+          <div className="absolute right-3 top-full z-20 mt-2 w-[min(18rem,calc(100vw-1.5rem))] rounded-lg border border-border bg-surface p-3 shadow-lg">
+            <p className="mb-2 text-xs text-muted">{tr("downloadHint")}</p>
+            <DownloadButtons />
+          </div>
+        )}
       </header>
       {error && <p className="bg-danger/15 px-4 py-2 text-sm text-danger">{error}</p>}
       <main className="flex-1 overflow-y-auto px-4 py-4 pb-24">

@@ -21,3 +21,5 @@ android-www/
 .env
 .env.*
 public/downloads/
+screenshots/
+artifacts/

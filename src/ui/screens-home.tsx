@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { APP_VERSION } from "@/version";
 import { counterparties, useApp } from "./store";
 import { Mono, Panel, copyText, usePartyName, useT } from "./screens-helpers";
+import { DownloadPanel } from "./downloads";
 
 export function HomeScreen() {
   const tr = useT();
@@ -78,6 +79,7 @@ export function HomeScreen() {
       <p className="text-[11px] text-subtle">
         {tr("swarm")}: {swarmEvent} · v{APP_VERSION}
       </p>
+      <DownloadPanel compact />
     </div>
   );
 }

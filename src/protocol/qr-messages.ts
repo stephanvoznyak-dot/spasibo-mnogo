@@ -40,7 +40,7 @@ export function encodeQrMessage(type: QrMessageType, act: Act): string {
   return raw;
 }
 
-function assertQrShape(obj: Record<string, unknown>): asserts obj is QrEnvelope {
+function assertQrShape(obj: Record<string, unknown>): QrEnvelope {
   if (obj.proto !== PROTOCOL_NAME) throw new ProtocolError("Чужой протокол в QR", "QR");
   if (obj.ver !== PROTOCOL_VERSION) {
     throw new ProtocolError("Неподдерживаемая версия QR", "QR");
@@ -50,9 +50,14 @@ function assertQrShape(obj: Record<string, unknown>): asserts obj is QrEnvelope 
   }
   if (typeof obj.payload !== "string") throw new ProtocolError("Пустой payload QR", "QR");
   if (obj.payload.length > QR_MAX_PAYLOAD_BYTES * 2) {
-    // base64url expands ~4/3; hard cap on string length
     throw new ProtocolError("QR payload превышает допустимый размер", "QR_SIZE");
   }
+  return {
+    proto: PROTOCOL_NAME,
+    ver: PROTOCOL_VERSION,
+    type: obj.type as QrMessageType,
+    payload: obj.payload,
+  };
 }
 
 export function decodeQrMessage(raw: string): { type: QrMessageType; act: Act } {
@@ -74,11 +79,11 @@ export function decodeQrMessage(raw: string): { type: QrMessageType; act: Act } 
   }
 
   const obj = parsed as Record<string, unknown>;
-  assertQrShape(obj);
+  const envelope = assertQrShape(obj);
 
   let payloadBytes: Uint8Array;
   try {
-    payloadBytes = b64urlToBytes(obj.payload);
+    payloadBytes = b64urlToBytes(envelope.payload);
   } catch {
     throw new ProtocolError("Некорректный base64url payload", "QR");
   }
@@ -89,14 +94,14 @@ export function decodeQrMessage(raw: string): { type: QrMessageType; act: Act } 
   const act = decodeAct(payloadBytes);
   verifyAct(act);
 
-  if (obj.type === "act-proposal" && act.sigM2) {
+  if (envelope.type === "act-proposal" && act.sigM2) {
     throw new ProtocolError("Предложение не должно содержать M2", "QR");
   }
-  if (obj.type === "act-final" && !act.sigM2) {
+  if (envelope.type === "act-final" && !act.sigM2) {
     throw new ProtocolError("Финальный акт должен содержать M2", "QR");
   }
 
-  return { type: obj.type, act };
+  return { type: envelope.type, act };
 }
 
 export function encodeManualFallback(act: Act, type: QrMessageType): string {

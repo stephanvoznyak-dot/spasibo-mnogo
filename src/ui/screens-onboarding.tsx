@@ -5,6 +5,7 @@ import { isValidMnemonic, normalizeMnemonic, type WordCount } from "@/crypto/bip
 import { APP_PRODUCT } from "@/version";
 import { useApp, type Identity } from "./store";
 import { Field, useT } from "./screens-helpers";
+import { DownloadPanel } from "./downloads";
 
 export function BootScreen() {
   const tr = useT();
@@ -96,6 +97,7 @@ export function Onboarding() {
           <Button variant="outline" size="lg" onClick={() => setMode("restore")}>
             {tr("restoreIdentity")}
           </Button>
+          <DownloadPanel compact />
           <button type="button" className="text-xs text-muted underline" onClick={() => setLabOpen((v) => !v)}>
             {tr("lab")}
           </button>

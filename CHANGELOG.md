@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.6 — 2026-10-05
+
+- Кнопка **Скачать** в шапке: APK, HTML, исходники, проект Xcode
+- Кнопки **Скачать** на входе, главной и в настройках
+- Загрузки берут локальный файл или GitHub Releases
+- Android `applicationId` выровнен: `org.normalproject.journal`, versionCode 7
+- iOS: версия 1.3.6, разрешения камеры в Info.plist, архив Xcode
+- `store.ts` восстановлен и лежит в репозитории
+- GitHub Actions: HTML + APK + ZIP + Xcode на теге
+
 ## 1.3.5 — 2026-10-05
 
 - MAX_CYCLE_STEPS=50_000 в `findCyclesFromState`

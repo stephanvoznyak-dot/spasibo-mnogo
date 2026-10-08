@@ -141,7 +141,7 @@ export async function loadActs(): Promise<LedgerEntry[]> {
       try {
         const act = decodeAct(hexToBytes(row.wireHex));
         verifyAct(act);
-        const remainingAmount = clampRemaining(act.amount, row.remainingAmount);
+        const remainingAmount = clampRemaining(act.amount, row.remainingAmount, Boolean(act.sigM2));
         out.push({
           act,
           status: row.status as ActStatus,
@@ -291,6 +291,7 @@ export async function importLedgerJson(json: string): Promise<LedgerEntry[]> {
     const remainingAmount = clampRemaining(
       act.amount,
       typeof row.remainingAmount === "number" ? row.remainingAmount : act.amount,
+      Boolean(act.sigM2),
     );
     out.push({
       act,
