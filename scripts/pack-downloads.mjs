@@ -91,11 +91,16 @@ async function main() {
 
   try {
     await access(join(root, "ios"));
+    try {
+      run("npx", ["cap", "sync", "ios"]);
+    } catch (err) {
+      console.log("cap sync ios failed, zipping current tree:", err instanceof Error ? err.message : err);
+    }
     await rm(join(outDir, "normal-project-ios.zip"), { force: true });
     await pyZip(join(outDir, "normal-project-ios.zip"), "ios");
     console.log("iOS zip written");
-  } catch {
-    console.log("ios/ missing — skip iOS zip");
+  } catch (err) {
+    console.log("ios zip skipped:", err instanceof Error ? err.message : err);
   }
 
   console.log("downloads ready in", outDir);
