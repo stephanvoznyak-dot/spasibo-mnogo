@@ -22,7 +22,10 @@ jobs:
           distribution: temurin
           java-version: "21"
       - name: Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          # Do not request the removed "tools" package — sdkmanager fails the job.
+          packages: "platform-tools"
       - name: SDK platform 36
         run: |
           yes | sdkmanager --licenses >/dev/null || true
@@ -40,11 +43,19 @@ jobs:
         run: |
           mkdir -p public/downloads
           cp android/app/build/outputs/apk/debug/app-debug.apk public/downloads/normal-project.apk
+          test -f public/downloads/normal-project.html
+          test -f public/downloads/normal-project-src.zip
+          test -f public/downloads/normal-project-ios.zip
+          test -f public/downloads/normal-project.apk
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: spasibo-mnogo-downloads
-          path: public/downloads/*
+          path: |
+            public/downloads/normal-project.apk
+            public/downloads/normal-project.html
+            public/downloads/normal-project-src.zip
+            public/downloads/normal-project-ios.zip
       - name: GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         env:
@@ -54,6 +65,16 @@ jobs:
             public/downloads/normal-project.apk \
             public/downloads/normal-project.html \
             public/downloads/normal-project-src.zip \
-            $(test -f public/downloads/normal-project-ios.zip && echo public/downloads/normal-project-ios.zip) \
+            public/downloads/normal-project-ios.zip \
             --title "Спасибо много ${{ github.ref_name }}" \
-            --notes "Промышленный образец. APK debug-signed (не Play Store). HTML офлайн. Исходники ZIP. Xcode: см. IOS_BUILD.md."
+            --notes "$(cat <<'EOF'
+Промышленный образец личного журнала обязательств.
+
+- Android APK (debug-подпись, не для Google Play)
+- Офлайн HTML
+- Исходники ZIP
+- Проект Xcode (см. IOS_BUILD.md)
+
+Кнопка «Скачать» в приложении: вход, главная, шапка и «Ещё».
+EOF
+)"

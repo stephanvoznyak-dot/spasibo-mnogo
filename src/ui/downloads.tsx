@@ -102,10 +102,6 @@ export function DownloadButtons({ lang, compact = false }: { lang?: Lang; compac
                 : "inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm"
             }
             onClick={() => {
-              if (f.key === "downloadApk") {
-                openRemote(f.remote);
-                return;
-              }
               void forceDownload(f.local, f.remote, f.name);
             }}
           >

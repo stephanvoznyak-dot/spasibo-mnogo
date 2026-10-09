@@ -11,7 +11,7 @@
 Канал: [t.me/+buaSHWKuVTY2ZmNi](https://t.me/+buaSHWKuVTY2ZmNi)  
 Автор концепции: **Ларионов Пётр** · +7 903 606-00-06 · [@Peterlarionov](https://t.me/Peterlarionov)
 
-Версия **1.3.6**.
+Версия **1.3.7**.
 
 ## Скачать
 
