@@ -24,7 +24,6 @@ jobs:
       - name: Android SDK
         uses: android-actions/setup-android@v4
         with:
-          # Do not request the removed "tools" package — sdkmanager fails the job.
           packages: "platform-tools"
       - name: SDK platform 36
         run: |
@@ -51,11 +50,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: spasibo-mnogo-downloads
-          path: |
-            public/downloads/normal-project.apk
-            public/downloads/normal-project.html
-            public/downloads/normal-project-src.zip
-            public/downloads/normal-project-ios.zip
+          path: public/downloads/*
       - name: GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         env:
@@ -66,15 +61,5 @@ jobs:
             public/downloads/normal-project.html \
             public/downloads/normal-project-src.zip \
             public/downloads/normal-project-ios.zip \
-            --title "Спасибо много ${{ github.ref_name }}" \
-            --notes "$(cat <<'EOF'
-Промышленный образец личного журнала обязательств.
-
-- Android APK (debug-подпись, не для Google Play)
-- Офлайн HTML
-- Исходники ZIP
-- Проект Xcode (см. IOS_BUILD.md)
-
-Кнопка «Скачать» в приложении: вход, главная, шапка и «Ещё».
-EOF
-)"
+            --title "Spasibo mnogo ${{ github.ref_name }}" \
+            --notes "Industrial sample. Debug-signed APK (not Play Store). Offline HTML. Source ZIP. Xcode project: see IOS_BUILD.md. Download button in the app."
