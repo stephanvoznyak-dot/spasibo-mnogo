@@ -1,11 +1,12 @@
 import { useMemo, useState, type FormEvent } from "react";
+import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { isValidMnemonic, normalizeMnemonic, type WordCount } from "@/crypto/bip39";
 import { APP_PRODUCT } from "@/version";
 import { useApp, type Identity } from "./store";
 import { Field, useT } from "./screens-helpers";
-import { DownloadPanel } from "./downloads";
+import { DownloadButtons, DownloadPanel } from "./downloads";
 
 export function BootScreen() {
   const tr = useT();
@@ -33,6 +34,7 @@ export function Onboarding() {
   const [err, setErr] = useState<string | null>(null);
   const [labCode, setLabCode] = useState("");
   const [labOpen, setLabOpen] = useState(false);
+  const [downloadsOpen, setDownloadsOpen] = useState(false);
 
   const challenge = useMemo(() => {
     if (!identity) return [];
@@ -70,15 +72,30 @@ export function Onboarding() {
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col gap-6 bg-bg px-5 py-8 text-fg">
-      <header className="flex items-end justify-between">
+      <header className="relative flex items-end justify-between gap-3">
         <div>
           <p className="font-serif text-4xl leading-none tracking-tight">{APP_PRODUCT}</p>
           <p className="mt-2 text-sm text-muted">{tr("tagline")}</p>
           <p className="mt-1 text-[11px] uppercase tracking-wide text-subtle">{tr("app")}</p>
         </div>
-        <button className="text-xs text-muted" onClick={() => void setLang(lang === "ru" ? "en" : "ru")}>
-          {lang === "ru" ? "EN" : "RU"}
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            className="inline-flex min-h-11 items-center gap-1 rounded-md border border-border bg-surface px-3 text-xs font-medium"
+            onClick={() => setDownloadsOpen((v) => !v)}
+            aria-expanded={downloadsOpen}
+          >
+            <Download className="size-4" /> {tr("download")}
+          </button>
+          <button className="text-xs text-muted" onClick={() => void setLang(lang === "ru" ? "en" : "ru")}>
+            {lang === "ru" ? "EN" : "RU"}
+          </button>
+        </div>
+        {downloadsOpen && (
+          <div className="absolute right-0 top-full z-20 mt-2 w-[min(18rem,calc(100vw-2.5rem))] rounded-lg border border-border bg-surface p-3 shadow-lg">
+            <DownloadButtons lang={lang} />
+          </div>
+        )}
       </header>
       <p className="text-sm text-muted">{tr("disclaimer")}</p>
       {err && <p className="text-sm text-danger">{err}</p>}

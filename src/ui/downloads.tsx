@@ -1,10 +1,11 @@
+import { useEffect, useState } from "react";
 import { Download, FileArchive, FileCode2, Smartphone } from "lucide-react";
 import { t, type Lang } from "./i18n";
 import { useApp } from "./store";
 import { Panel } from "./screens-helpers";
 
 const RELEASE = "https://github.com/stephanvoznyak-dot/spasibo-mnogo/releases/latest/download";
-const REPO_ZIP = "https://github.com/stephanvoznyak-dot/spasibo-mnogo/archive/refs/heads/main.zip";
+const RELEASES_PAGE = "https://github.com/stephanvoznyak-dot/spasibo-mnogo/releases/latest";
 const REPO_PAGE = "https://github.com/stephanvoznyak-dot/spasibo-mnogo";
 
 type FileSpec = {
@@ -48,70 +49,65 @@ const FILES: FileSpec[] = [
   },
 ];
 
-function saveBlob(buf: ArrayBuffer, filename: string) {
-  const blob = new Blob([buf], { type: "application/octet-stream" });
-  const href = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = href;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(href), 1500);
-}
-
-function openRemote(url: string) {
-  const a = document.createElement("a");
-  a.href = url;
-  a.target = "_blank";
-  a.rel = "noopener";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-}
-
-async function forceDownload(localUrl: string, remoteUrl: string, filename: string) {
-  const remote = remoteUrl.endsWith("/normal-project-src.zip") ? REPO_ZIP : remoteUrl;
-  try {
-    const res = await fetch(localUrl);
-    if (!res.ok) throw new Error("unavailable");
-    const buf = await res.arrayBuffer();
-    if (buf.byteLength < 64) throw new Error("empty");
-    saveBlob(buf, filename);
-  } catch {
-    openRemote(remote);
-  }
+/** APK / file:// / Capacitor do not ship public/downloads — send those to GitHub. */
+function useRemoteDownloads() {
+  const [remote, setRemote] = useState(false);
+  useEffect(() => {
+    const cap = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
+    const { protocol, hostname } = window.location;
+    const packaged =
+      Boolean(cap?.isNativePlatform?.()) ||
+      protocol === "file:" ||
+      protocol === "capacitor:" ||
+      protocol === "ionic:" ||
+      (protocol === "https:" && (hostname === "localhost" || hostname === "127.0.0.1"));
+    setRemote(packaged);
+  }, []);
+  return remote;
 }
 
 export function DownloadButtons({ lang, compact = false }: { lang?: Lang; compact?: boolean }) {
   const storeLang = useApp((s) => s.settings.lang);
   const resolved = lang ?? storeLang;
-  const list = FILES;
+  const remoteMode = useRemoteDownloads();
 
   return (
     <div className="flex flex-col gap-2">
-      {list.map((f) => {
+      {FILES.map((f) => {
         const Icon = f.icon;
+        const href = remoteMode ? f.remote : f.local;
+        const external = href.startsWith("http");
         return (
-          <button
+          <a
             key={f.name}
-            type="button"
+            href={href}
+            {...(external
+              ? { target: "_blank", rel: "noopener noreferrer" }
+              : { download: f.name })}
             className={
               f.primary
-                ? "inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-accent px-4 text-sm font-medium text-accent-fg"
-                : "inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm"
+                ? "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md bg-accent px-4 text-sm font-medium text-accent-fg"
+                : "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border border-border px-4 text-sm"
             }
-            onClick={() => {
-              void forceDownload(f.local, f.remote, f.name);
-            }}
           >
             <Icon className="size-4" /> {t(resolved, f.key)}
-          </button>
+          </a>
         );
       })}
+      <p className="text-[11px] leading-snug text-muted">{t(resolved, "downloadDebug")}</p>
       {!compact && (
         <a
           className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-xs text-muted underline"
+          href={RELEASES_PAGE}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {t(resolved, "releases")} · GitHub
+        </a>
+      )}
+      {!compact && (
+        <a
+          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-4 text-xs text-muted underline"
           href={REPO_PAGE}
           target="_blank"
           rel="noreferrer"

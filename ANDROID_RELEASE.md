@@ -35,7 +35,7 @@ android {
   }
 }
 ```
-`versionName` = `APP_VERSION` из `src/version.ts` (**1.3.7**), `versionCode` увеличивать на 1 при каждом релизе (сейчас 8).
+`versionName` = `APP_VERSION` из `src/version.ts` (**1.3.8**), `versionCode` увеличивать на 1 при каждом релизе (сейчас 9).
 
 ## 3. Сборка
 ```

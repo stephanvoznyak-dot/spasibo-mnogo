@@ -76,6 +76,9 @@ const dict = {
     downloadZip: "Скачать исходники",
     downloadIos: "Скачать Xcode-проект",
     downloadHint: "Android APK · офлайн HTML · исходники и проект Xcode",
+    downloadDebug:
+      "APK с debug-подписью, не для Google Play. На телефоне разрешите установку из неизвестных источников.",
+    releases: "Релизы",
     author: "Автор",
     channel: "Канал",
     dangerSeed: "Любой, кто увидит эту фразу, получит контроль над журналом.",
@@ -203,6 +206,9 @@ const dict = {
     downloadZip: "Download sources",
     downloadIos: "Download Xcode project",
     downloadHint: "Android APK · offline HTML · sources and Xcode project",
+    downloadDebug:
+      "The APK is debug-signed, not for Google Play. On the phone, allow installs from unknown sources.",
+    releases: "Releases",
     author: "Author",
     channel: "Channel",
     dangerSeed: "Anyone who sees this phrase can control the ledger.",
