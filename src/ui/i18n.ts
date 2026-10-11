@@ -78,6 +78,8 @@ const dict = {
     downloadHint: "Android APK · офлайн HTML · исходники и проект Xcode",
     downloadDebug:
       "APK с debug-подписью, не для Google Play. На телефоне разрешите установку из неизвестных источников.",
+    downloadStarted: "Сохранение началось. Если файла нет в «Загрузках» — откройте «Релизы».",
+    downloadBlocked: "Браузер заблокировал окно. Откройте «Релизы» и скачайте файл оттуда.",
     releases: "Релизы",
     author: "Автор",
     channel: "Канал",
@@ -208,6 +210,8 @@ const dict = {
     downloadHint: "Android APK · offline HTML · sources and Xcode project",
     downloadDebug:
       "The APK is debug-signed, not for Google Play. On the phone, allow installs from unknown sources.",
+    downloadStarted: "Saving started. If the file is not in Downloads, open Releases.",
+    downloadBlocked: "The browser blocked the window. Open Releases and download the file there.",
     releases: "Releases",
     author: "Author",
     channel: "Channel",

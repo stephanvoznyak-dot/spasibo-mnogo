@@ -49,9 +49,9 @@ const FILES: FileSpec[] = [
   },
 ];
 
-/** APK / file:// / Capacitor do not ship public/downloads — send those to GitHub. */
-function useRemoteDownloads() {
-  const [remote, setRemote] = useState(false);
+/** Installed APK / file:// have no local copies. The live preview is an iframe and often blocks the download attribute. */
+function useDownloadContext() {
+  const [ctx, setCtx] = useState({ packaged: false, framed: false });
   useEffect(() => {
     const cap = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
     const { protocol, hostname } = window.location;
@@ -61,50 +61,56 @@ function useRemoteDownloads() {
       protocol === "capacitor:" ||
       protocol === "ionic:" ||
       (protocol === "https:" && (hostname === "localhost" || hostname === "127.0.0.1"));
-    setRemote(packaged);
+    setCtx({ packaged, framed: window.parent !== window });
   }, []);
-  return remote;
+  return ctx;
 }
 
 export function DownloadButtons({ lang, compact = false }: { lang?: Lang; compact?: boolean }) {
   const storeLang = useApp((s) => s.settings.lang);
   const resolved = lang ?? storeLang;
-  const remoteMode = useRemoteDownloads();
+  const { packaged, framed } = useDownloadContext();
+  const [notice, setNotice] = useState<string | null>(null);
 
   return (
     <div className="flex flex-col gap-2">
       {FILES.map((f) => {
         const Icon = f.icon;
-        const href = remoteMode ? f.remote : f.local;
-        const external = href.startsWith("http");
+        const href = packaged ? f.remote : f.local;
+        const external = packaged || framed;
         return (
           <a
             key={f.name}
             href={href}
-            {...(external
-              ? { target: "_blank", rel: "noopener noreferrer" }
-              : { download: f.name })}
+            download={external ? undefined : f.name}
+            {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
             className={
               f.primary
                 ? "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md bg-accent px-4 text-sm font-medium text-accent-fg"
                 : "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border border-border px-4 text-sm"
             }
+            onClick={(event) => {
+              setNotice(t(resolved, "downloadStarted"));
+              if (!framed || packaged) return;
+              event.preventDefault();
+              const opened = window.open(f.remote, "_blank", "noopener,noreferrer");
+              if (!opened) setNotice(t(resolved, "downloadBlocked"));
+            }}
           >
             <Icon className="size-4" /> {t(resolved, f.key)}
           </a>
         );
       })}
+      {notice && <p className="text-[11px] leading-snug text-fg">{notice}</p>}
       <p className="text-[11px] leading-snug text-muted">{t(resolved, "downloadDebug")}</p>
-      {!compact && (
-        <a
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-xs text-muted underline"
-          href={RELEASES_PAGE}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {t(resolved, "releases")} · GitHub
-        </a>
-      )}
+      <a
+        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-xs text-muted underline"
+        href={RELEASES_PAGE}
+        target="_blank"
+        rel="noreferrer"
+      >
+        {t(resolved, "releases")} · GitHub
+      </a>
       {!compact && (
         <a
           className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-4 text-xs text-muted underline"

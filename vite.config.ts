@@ -1,5 +1,5 @@
-import { readdirSync } from "node:fs";
-import { join } from "node:path";
+import { readdirSync, createReadStream, existsSync, statSync } from "node:fs";
+import { basename, extname, join } from "node:path";
 import type { Plugin } from "vite";
 import { defineConfig } from "vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
@@ -142,6 +142,66 @@ function authPopupPlugin(): Plugin {
   };
 }
 
+const DOWNLOAD_TYPES: Record<string, string> = {
+  ".apk": "application/vnd.android.package-archive",
+  ".zip": "application/zip",
+  ".html": "text/html; charset=utf-8",
+};
+
+/** Serve /downloads with a real MIME and attachment disposition.
+ *  Vite's static handler leaves .apk as an empty Content-Type, so phones save a file that will not install. */
+function downloadStaticPlugin(): Plugin {
+  const send = (root: string) => (req: { url?: string; method?: string }, res: {
+    statusCode: number;
+    setHeader: (k: string, v: string) => void;
+    end: (body?: string) => void;
+  }, next: () => void) => {
+    const pathOnly = (req.url ?? "").split("?", 1)[0] ?? "";
+    if (!pathOnly.startsWith("/downloads/")) {
+      next();
+      return;
+    }
+    if ((req.method ?? "GET").toUpperCase() !== "GET" && (req.method ?? "GET").toUpperCase() !== "HEAD") {
+      next();
+      return;
+    }
+    const name = basename(pathOnly);
+    if (!name || name !== pathOnly.slice("/downloads/".length) || name.includes("..")) {
+      next();
+      return;
+    }
+    const file = join(root, "public", "downloads", name);
+    if (!existsSync(file)) {
+      next();
+      return;
+    }
+    const ext = extname(name).toLowerCase();
+    const type = DOWNLOAD_TYPES[ext] ?? "application/octet-stream";
+    const size = statSync(file).size;
+    res.statusCode = 200;
+    res.setHeader("Content-Type", type);
+    res.setHeader("Content-Length", String(size));
+    res.setHeader("Content-Disposition", `attachment; filename="${name}"`);
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Cache-Control", "no-cache");
+    if ((req.method ?? "GET").toUpperCase() === "HEAD") {
+      res.end();
+      return;
+    }
+    createReadStream(file).pipe(res as unknown as NodeJS.WritableStream);
+  };
+
+  return {
+    name: "app-builder:download-static",
+    configureServer(server) {
+      server.middlewares.use(send(server.config.root));
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(send(server.config.root));
+    },
+  };
+}
+
 // `0.0.0.0:8080` is the live-preview contract — don't change host/port.
 // The dev server starts once `src/router.tsx` and `src/routes/` exist — see
 // AGENTS.md § "First scaffold".
@@ -158,6 +218,7 @@ export default defineConfig(({ command, isPreview }) => ({
   },
   resolve: { tsconfigPaths: true },
   plugins: [
+    downloadStaticPlugin(),
     pgliteBootstrapPlugin(),
     // Before tanstackStart so /auth/popup never falls through to the SPA.
     authPopupPlugin(),
