@@ -8,37 +8,32 @@ const RELEASE = "https://github.com/stephanvoznyak-dot/spasibo-mnogo/releases/la
 const RELEASES_PAGE = "https://github.com/stephanvoznyak-dot/spasibo-mnogo/releases/latest";
 const REPO_PAGE = "https://github.com/stephanvoznyak-dot/spasibo-mnogo";
 
+type FileKey = "downloadHtml" | "downloadApk" | "downloadZip" | "downloadIos";
+
 type FileSpec = {
   local: string;
   remote: string;
   name: string;
-  key: "downloadApk" | "downloadHtml" | "downloadZip" | "downloadIos";
+  key: FileKey;
   icon: typeof Download;
   primary?: boolean;
 };
 
 const FILES: FileSpec[] = [
   {
-    local: "/downloads/normal-project.apk",
-    remote: `${RELEASE}/normal-project.apk`,
-    name: "normal-project.apk",
-    key: "downloadApk",
-    icon: Smartphone,
-    primary: true,
-  },
-  {
     local: "/downloads/normal-project.html",
     remote: `${RELEASE}/normal-project.html`,
     name: "normal-project.html",
     key: "downloadHtml",
     icon: FileCode2,
+    primary: true,
   },
   {
-    local: "/downloads/normal-project-src.zip",
-    remote: `${RELEASE}/normal-project-src.zip`,
-    name: "normal-project-src.zip",
-    key: "downloadZip",
-    icon: FileArchive,
+    local: "/downloads/normal-project.apk",
+    remote: `${RELEASE}/normal-project.apk`,
+    name: "normal-project.apk",
+    key: "downloadApk",
+    icon: Smartphone,
   },
   {
     local: "/downloads/normal-project-ios.zip",
@@ -47,13 +42,41 @@ const FILES: FileSpec[] = [
     key: "downloadIos",
     icon: FileArchive,
   },
+  {
+    local: "/downloads/normal-project-src.zip",
+    remote: `${RELEASE}/normal-project-src.zip`,
+    name: "normal-project-src.zip",
+    key: "downloadZip",
+    icon: FileArchive,
+  },
 ];
 
-/** Installed APK / file:// have no local copies. The live preview is an iframe and often blocks the download attribute. */
-function useDownloadContext() {
-  const [ctx, setCtx] = useState({ packaged: false, framed: false });
+const MIME: Record<string, string> = {
+  ".apk": "application/vnd.android.package-archive",
+  ".zip": "application/zip",
+  ".html": "text/html",
+};
+
+function mimeOf(name: string) {
+  const dot = name.lastIndexOf(".");
+  return MIME[dot >= 0 ? name.slice(dot).toLowerCase() : ""] ?? "application/octet-stream";
+}
+
+/** iPhone, the Grok preview frame, and the installed app cannot use a plain <a download>. */
+function useExternalSave() {
+  const [external, setExternal] = useState(false);
   useEffect(() => {
+    const ua = navigator.userAgent;
+    const ios =
+      /iPad|iPhone|iPod/.test(ua) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     const cap = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
+    let framed = false;
+    try {
+      framed = window.self !== window.top;
+    } catch {
+      framed = true;
+    }
     const { protocol, hostname } = window.location;
     const packaged =
       Boolean(cap?.isNativePlatform?.()) ||
@@ -61,56 +84,100 @@ function useDownloadContext() {
       protocol === "capacitor:" ||
       protocol === "ionic:" ||
       (protocol === "https:" && (hostname === "localhost" || hostname === "127.0.0.1"));
-    setCtx({ packaged, framed: window.parent !== window });
+    setExternal(ios || framed || packaged);
   }, []);
-  return ctx;
+  return external;
+}
+
+function saveBlob(file: File) {
+  const href = URL.createObjectURL(file);
+  const a = document.createElement("a");
+  a.href = href;
+  a.download = file.name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(href), 4000);
 }
 
 export function DownloadButtons({ lang, compact = false }: { lang?: Lang; compact?: boolean }) {
   const storeLang = useApp((s) => s.settings.lang);
   const resolved = lang ?? storeLang;
-  const { packaged, framed } = useDownloadContext();
-  const [notice, setNotice] = useState<string | null>(null);
+  const external = useExternalSave();
+  const [note, setNote] = useState<string | null>(null);
+  const [ready, setReady] = useState<{ name: string; file: File } | null>(null);
+
+  async function saveExternal(f: FileSpec) {
+    if (ready?.name === f.name) {
+      try {
+        await navigator.share({ files: [ready.file], title: f.name });
+        setNote(t(resolved, "downloadSaved"));
+        setReady(null);
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
+    }
+    const popup = window.open(f.remote, "_blank", "noopener,noreferrer");
+    if (popup) {
+      setNote(t(resolved, "downloadStarted"));
+      return;
+    }
+    try {
+      const res = await fetch(f.local);
+      if (!res.ok) throw new Error("missing");
+      const file = new File([await res.arrayBuffer()], f.name, { type: mimeOf(f.name) });
+      if (navigator.canShare?.({ files: [file] })) {
+        setReady({ name: f.name, file });
+        setNote(t(resolved, "downloadTapAgain"));
+        return;
+      }
+      saveBlob(file);
+      setNote(t(resolved, "downloadStarted"));
+    } catch {
+      setNote(t(resolved, "downloadBlocked"));
+    }
+  }
 
   return (
     <div className="flex flex-col gap-2">
       {FILES.map((f) => {
         const Icon = f.icon;
-        const href = packaged ? f.remote : f.local;
-        const external = packaged || framed;
+        const label = ready?.name === f.name ? t(resolved, "downloadSaveNow") : t(resolved, f.key);
         return (
           <a
             key={f.name}
-            href={href}
-            download={external ? undefined : f.name}
-            {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+            href={external ? f.remote : f.local}
+            {...(external
+              ? { target: "_blank", rel: "noopener noreferrer" }
+              : { download: f.name })}
             className={
               f.primary
-                ? "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md bg-accent px-4 text-sm font-medium text-accent-fg"
-                : "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border border-border px-4 text-sm"
+                ? "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md bg-accent px-4 text-center text-sm font-medium text-accent-fg"
+                : "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border border-border px-4 text-center text-sm"
             }
             onClick={(event) => {
-              setNotice(t(resolved, "downloadStarted"));
-              if (!framed || packaged) return;
+              if (!external) return;
               event.preventDefault();
-              const opened = window.open(f.remote, "_blank", "noopener,noreferrer");
-              if (!opened) setNotice(t(resolved, "downloadBlocked"));
+              void saveExternal(f);
             }}
           >
-            <Icon className="size-4" /> {t(resolved, f.key)}
+            <Icon className="size-4 shrink-0" /> {label}
           </a>
         );
       })}
-      {notice && <p className="text-[11px] leading-snug text-fg">{notice}</p>}
+      <p className="text-[11px] leading-snug text-muted">{note ?? t(resolved, "downloadHint")}</p>
       <p className="text-[11px] leading-snug text-muted">{t(resolved, "downloadDebug")}</p>
-      <a
-        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-xs text-muted underline"
-        href={RELEASES_PAGE}
-        target="_blank"
-        rel="noreferrer"
-      >
-        {t(resolved, "releases")} · GitHub
-      </a>
+      {!compact && (
+        <a
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-xs text-muted underline"
+          href={RELEASES_PAGE}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {t(resolved, "releases")} · GitHub
+        </a>
+      )}
       {!compact && (
         <a
           className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-4 text-xs text-muted underline"
@@ -130,7 +197,6 @@ export function DownloadPanel({ compact = false }: { compact?: boolean }) {
   return (
     <Panel>
       <p className="text-xs uppercase tracking-wide text-muted">{t(lang, "downloads")}</p>
-      <p className="mt-1 text-sm text-muted">{t(lang, "downloadHint")}</p>
       <div className="mt-3">
         <DownloadButtons lang={lang} compact={compact} />
       </div>
