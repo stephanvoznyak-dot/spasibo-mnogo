@@ -62,14 +62,15 @@ function mimeOf(name: string) {
   return MIME[dot >= 0 ? name.slice(dot).toLowerCase() : ""] ?? "application/octet-stream";
 }
 
-/** iPhone, the Grok preview frame, and the installed app cannot use a plain <a download>. */
-function useExternalSave() {
-  const [external, setExternal] = useState(false);
+function isIos() {
+  const ua = navigator.userAgent;
+  return /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+/** Preview frame, iPhone and the installed app cannot save via <a download>. */
+function useHandoff() {
+  const [handoff, setHandoff] = useState(true);
   useEffect(() => {
-    const ua = navigator.userAgent;
-    const ios =
-      /iPad|iPhone|iPod/.test(ua) ||
-      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     const cap = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
     let framed = false;
     try {
@@ -84,30 +85,20 @@ function useExternalSave() {
       protocol === "capacitor:" ||
       protocol === "ionic:" ||
       (protocol === "https:" && (hostname === "localhost" || hostname === "127.0.0.1"));
-    setExternal(ios || framed || packaged);
+    setHandoff(isIos() || framed || packaged);
   }, []);
-  return external;
-}
-
-function saveBlob(file: File) {
-  const href = URL.createObjectURL(file);
-  const a = document.createElement("a");
-  a.href = href;
-  a.download = file.name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(href), 4000);
+  return handoff;
 }
 
 export function DownloadButtons({ lang, compact = false }: { lang?: Lang; compact?: boolean }) {
   const storeLang = useApp((s) => s.settings.lang);
   const resolved = lang ?? storeLang;
-  const external = useExternalSave();
+  const handoff = useHandoff();
   const [note, setNote] = useState<string | null>(null);
   const [ready, setReady] = useState<{ name: string; file: File } | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
 
-  async function saveExternal(f: FileSpec) {
+  async function saveHandoff(f: FileSpec) {
     if (ready?.name === f.name) {
       try {
         await navigator.share({ files: [ready.file], title: f.name });
@@ -117,25 +108,44 @@ export function DownloadButtons({ lang, compact = false }: { lang?: Lang; compac
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") return;
       }
-    }
-    const popup = window.open(f.remote, "_blank", "noopener,noreferrer");
-    if (popup) {
-      setNote(t(resolved, "downloadStarted"));
+      window.location.assign(f.remote);
       return;
     }
+
+    // window.open on iPhone replaces the preview with a blank page. Skip it.
+    if (!isIos()) {
+      const popup = window.open(f.remote, "_blank", "noopener,noreferrer");
+      if (popup) {
+        setNote(t(resolved, "downloadStarted"));
+        return;
+      }
+    }
+
+    setBusy(f.name);
+    setNote(t(resolved, "downloadTapAgain"));
     try {
       const res = await fetch(f.local);
       if (!res.ok) throw new Error("missing");
       const file = new File([await res.arrayBuffer()], f.name, { type: mimeOf(f.name) });
       if (navigator.canShare?.({ files: [file] })) {
-        setReady({ name: f.name, file });
-        setNote(t(resolved, "downloadTapAgain"));
-        return;
+        try {
+          await navigator.share({ files: [file], title: f.name });
+          setNote(t(resolved, "downloadSaved"));
+          return;
+        } catch (error) {
+          if (error instanceof DOMException && error.name === "AbortError") return;
+          setReady({ name: f.name, file });
+          setNote(t(resolved, "downloadTapAgain"));
+          return;
+        }
       }
-      saveBlob(file);
-      setNote(t(resolved, "downloadStarted"));
+      setNote(t(resolved, "downloadBlocked"));
+      window.location.assign(f.remote);
     } catch {
       setNote(t(resolved, "downloadBlocked"));
+      window.location.assign(f.remote);
+    } finally {
+      setBusy(null);
     }
   }
 
@@ -147,8 +157,8 @@ export function DownloadButtons({ lang, compact = false }: { lang?: Lang; compac
         return (
           <a
             key={f.name}
-            href={external ? f.remote : f.local}
-            {...(external
+            href={handoff ? f.remote : f.local}
+            {...(handoff
               ? { target: "_blank", rel: "noopener noreferrer" }
               : { download: f.name })}
             className={
@@ -156,10 +166,11 @@ export function DownloadButtons({ lang, compact = false }: { lang?: Lang; compac
                 ? "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md bg-accent px-4 text-center text-sm font-medium text-accent-fg"
                 : "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border border-border px-4 text-center text-sm"
             }
+            aria-busy={busy === f.name}
             onClick={(event) => {
-              if (!external) return;
+              if (!handoff) return;
               event.preventDefault();
-              void saveExternal(f);
+              void saveHandoff(f);
             }}
           >
             <Icon className="size-4 shrink-0" /> {label}
@@ -168,16 +179,14 @@ export function DownloadButtons({ lang, compact = false }: { lang?: Lang; compac
       })}
       <p className="text-[11px] leading-snug text-muted">{note ?? t(resolved, "downloadHint")}</p>
       <p className="text-[11px] leading-snug text-muted">{t(resolved, "downloadDebug")}</p>
-      {!compact && (
-        <a
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-xs text-muted underline"
-          href={RELEASES_PAGE}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {t(resolved, "releases")} · GitHub
-        </a>
-      )}
+      <a
+        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-xs text-muted underline"
+        href={RELEASES_PAGE}
+        target="_blank"
+        rel="noreferrer"
+      >
+        {t(resolved, "releases")} · GitHub
+      </a>
       {!compact && (
         <a
           className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-4 text-xs text-muted underline"
