@@ -97,9 +97,15 @@ export function DownloadButtons({ lang, compact = false }: { lang?: Lang; compac
   const [note, setNote] = useState<string | null>(null);
   const [ready, setReady] = useState<{ name: string; file: File } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [link, setLink] = useState<string | null>(null);
+
+  function rememberLink(url: string) {
+    setLink(url);
+    void navigator.clipboard?.writeText(url).catch(() => undefined);
+  }
 
   async function saveHandoff(f: FileSpec) {
-    if (ready?.name === f.name) {
+    if (ready?.name === f.name && typeof navigator.share === "function") {
       try {
         await navigator.share({ files: [ready.file], title: f.name });
         setNote(t(resolved, "downloadSaved"));
@@ -108,42 +114,30 @@ export function DownloadButtons({ lang, compact = false }: { lang?: Lang; compac
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") return;
       }
-      window.location.assign(f.remote);
+    }
+
+    // Copy before any await so iOS still counts this tap as a user gesture.
+    rememberLink(f.remote);
+    setNote(t(resolved, "downloadCopied"));
+
+    // Opening GitHub inside the preview replaces the app with a blank page.
+    const popup = isIos() ? null : window.open(f.remote, "_blank", "noopener,noreferrer");
+    if (popup) {
+      setNote(t(resolved, "downloadStarted"));
       return;
     }
 
-    // window.open on iPhone replaces the preview with a blank page. Skip it.
-    if (!isIos()) {
-      const popup = window.open(f.remote, "_blank", "noopener,noreferrer");
-      if (popup) {
-        setNote(t(resolved, "downloadStarted"));
-        return;
-      }
-    }
-
     setBusy(f.name);
-    setNote(t(resolved, "downloadTapAgain"));
     try {
       const res = await fetch(f.local);
       if (!res.ok) throw new Error("missing");
       const file = new File([await res.arrayBuffer()], f.name, { type: mimeOf(f.name) });
       if (navigator.canShare?.({ files: [file] })) {
-        try {
-          await navigator.share({ files: [file], title: f.name });
-          setNote(t(resolved, "downloadSaved"));
-          return;
-        } catch (error) {
-          if (error instanceof DOMException && error.name === "AbortError") return;
-          setReady({ name: f.name, file });
-          setNote(t(resolved, "downloadTapAgain"));
-          return;
-        }
+        setReady({ name: f.name, file });
+        setNote(t(resolved, "downloadTapAgain"));
       }
-      setNote(t(resolved, "downloadBlocked"));
-      window.location.assign(f.remote);
     } catch {
-      setNote(t(resolved, "downloadBlocked"));
-      window.location.assign(f.remote);
+      /* the copied link is the fallback */
     } finally {
       setBusy(null);
     }
@@ -178,24 +172,45 @@ export function DownloadButtons({ lang, compact = false }: { lang?: Lang; compac
         );
       })}
       <p className="text-[11px] leading-snug text-muted">{note ?? t(resolved, "downloadHint")}</p>
+      {link && (
+        <input
+          readOnly
+          value={link}
+          className="w-full rounded-md border border-border bg-bg px-2 py-2 font-mono text-[11px] text-fg"
+          onFocus={(event) => event.currentTarget.select()}
+          aria-label={t(resolved, "downloadCopied")}
+        />
+      )}
       <p className="text-[11px] leading-snug text-muted">{t(resolved, "downloadDebug")}</p>
-      <a
-        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-xs text-muted underline"
-        href={RELEASES_PAGE}
-        target="_blank"
-        rel="noreferrer"
+      <button
+        type="button"
+        className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md px-4 text-xs text-muted underline"
+        onClick={() => {
+          if (handoff) {
+            rememberLink(RELEASES_PAGE);
+            setNote(t(resolved, "downloadCopied"));
+            return;
+          }
+          window.open(RELEASES_PAGE, "_blank", "noopener,noreferrer");
+        }}
       >
         {t(resolved, "releases")} · GitHub
-      </a>
+      </button>
       {!compact && (
-        <a
-          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-4 text-xs text-muted underline"
-          href={REPO_PAGE}
-          target="_blank"
-          rel="noreferrer"
+        <button
+          type="button"
+          className="inline-flex min-h-9 cursor-pointer items-center justify-center gap-2 rounded-md px-4 text-xs text-muted underline"
+          onClick={() => {
+            if (handoff) {
+              rememberLink(REPO_PAGE);
+              setNote(t(resolved, "downloadCopied"));
+              return;
+            }
+            window.open(REPO_PAGE, "_blank", "noopener,noreferrer");
+          }}
         >
           {t(resolved, "sourceRepo")} · GitHub
-        </a>
+        </button>
       )}
     </div>
   );
