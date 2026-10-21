@@ -17,9 +17,9 @@
 
 - Основной промышленный образец концепта Normal Project в стеке Vite + React + Capacitor.
 - Протокол реализован: BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR-обмен.
-- Связан с нативным Android-прототипом в репозитории NormalProject и формализациями на Lean 4.
-- Тесты протокола (`npm run test:canon`) проходят (25/25). Typecheck проходит.
-- npm audit выявил 7 уязвимостей (3 moderate, 4 high) — рекомендуется проверить зависимости; часть требует осторожного обновления.
+- Связан с нативным Android-прототипом в репозитории [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и формализациями на Lean 4 ([lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants)).
+- Тесты протокола (`npm run test:canon`) требуют **Node.js 22+** из-за `--experimental-strip-types`. Typecheck (`tsc --noEmit`) проходит.
+- После чистой установки с `--legacy-peer-deps` npm audit показывает 3 moderate уязвимости (основные high-уровня исправлены или обойдены). Рекомендуется периодически проверять зависимости.
 
 ## Скачать
 
@@ -54,10 +54,10 @@ State = deriveState(History)
 ## Запуск
 
 ```
-npm install
+npm install --legacy-peer-deps
 npm run restore:store
 npm run dev
-npm run test:canon
+npm run test:canon   # требует Node 22+
 ```
 
 ## Сборки
@@ -72,6 +72,7 @@ npm run test:canon
 - [PROTOCOL.md](PROTOCOL.md) — форматы, History, локальный клиринг
 - [SECURITY.md](SECURITY.md)
 - [CHANGELOG.md](CHANGELOG.md)
+- [OPTIMIZATION.md](OPTIMIZATION.md) — план оптимизации
 
 ## Отказ от ответственности
 
