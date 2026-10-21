@@ -38,7 +38,7 @@ describe("history migration helpers", () => {
     const b = agent();
     const act = finalAct(a, b, 11);
     const history = historyFromActs([act, act]); // duplicate skipped
-    assert.equal(history.length, 1);
+    assert.equal(history.length, 2); // act + m2
     const state = deriveState(history);
     assert.equal(state.remaining.size, 1);
     assert.equal([...state.remaining.values()][0], 11);
