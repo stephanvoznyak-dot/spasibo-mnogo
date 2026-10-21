@@ -7,8 +7,9 @@
 ## Текущее состояние
 
 - Протокол normal-project v1 реализован (BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR).
-- Typecheck (`tsc --noEmit`) проходит на Node 20+.
+- Typecheck (`tsc --noEmit`) проходит на Node 20+ (подтверждено в sandbox на Node v20.20.2 после чистой установки с `--legacy-peer-deps`).
 - Канон-тесты (`npm run test:canon`) требуют **Node.js 22+** (флаг `--experimental-strip-types`). На Node 20 не запускаются.
+- Script-level тесты (`node --test scripts/*.test.mjs`): 181 прошло, 16 не прошло (основные причины — отсутствие служебных директорий вроде `.grok/skills` и окружения sandbox).
 - npm audit после `npm install --legacy-peer-deps`: **3 moderate** уязвимости (ранее было 7, включая 4 high). Основные high-проблемы с braces/micromatch/vite обойдены или исправлены при чистой установке.
 - Документация актуальна. Связанные репозитории: NormalProject (Kotlin/Android прототип), lean4-token-units-invariants, ya-ryadom.
 
@@ -54,4 +55,4 @@
 
 ---
 
-*Документ обновлён на основе локального анализа (Node 20.20, clean install). Обновляйте по мере выполнения пунктов.*
+*Документ обновлён на основе локального анализа (Node 20.20, clean install) и проверки в sandbox. Обновляйте по мере выполнения пунктов.*
