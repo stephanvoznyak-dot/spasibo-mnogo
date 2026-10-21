@@ -38,12 +38,12 @@ describe("history API", () => {
     let history: History = [];
     const r1 = appendAct(history, act);
     assert.equal(r1.added, true);
-    assert.equal(r1.history.length, 1);
+    assert.equal(r1.history.length, 2); // act + m2
     history = r1.history;
 
     const r2 = appendAct(history, act);
     assert.equal(r2.added, false);
-    assert.equal(r2.history.length, 1);
+    assert.equal(r2.history.length, 2);
     assert.equal(r2.history, history); // same reference when no-op
   });
 
@@ -52,7 +52,10 @@ describe("history API", () => {
     const b = agent();
     const act = finalAct(a, b, 3);
     const { history } = appendAct([], act);
-    assert.throws(() => appendAct(history, act, { allowDuplicate: false }), /DUPLICATE/);
+    assert.throws(
+      () => appendAct(history, act, { allowDuplicate: false }),
+      (err: any) => err instanceof Error && (err as any).code === "DUPLICATE",
+    );
   });
 
   it("18-12-8 via history API preserves nets", () => {
@@ -72,10 +75,12 @@ describe("history API", () => {
     const before = stateOf(history);
     const { history: next, state: after } = appendClearing(history, cycles[0]!);
 
-    assert.equal(next.length, 4);
-    assert.equal(after.remaining.get(bytesToHex((history[0] as { wire: Act }).wire.hash)), 10);
-    assert.equal(after.remaining.get(bytesToHex((history[1] as { wire: Act }).wire.hash)), 4);
-    assert.equal(after.remaining.get(bytesToHex((history[2] as { wire: Act }).wire.hash)), 0);
+    assert.equal(next.length, 7); // 3 acts * 2 + clearing
+    const acts = history.filter((e): e is { kind: "act"; wire: Act } => e.kind === "act");
+    assert.equal(acts.length, 3);
+    assert.equal(after.remaining.get(bytesToHex(acts[0]!.wire.hash)), 10);
+    assert.equal(after.remaining.get(bytesToHex(acts[1]!.wire.hash)), 4);
+    assert.equal(after.remaining.get(bytesToHex(acts[2]!.wire.hash)), 0);
 
     // Net invariant via snapshot equality is checked inside deriveState;
     // here we only assert recovery works.
@@ -92,7 +97,7 @@ describe("history API", () => {
     const b = agent();
     const act = finalAct(a, b, 1);
     const h = historyFromActs([act, act, act]);
-    assert.equal(h.length, 1);
+    assert.equal(h.length, 2); // act + m2
   });
 
   it("cycle sort is deterministic across runs", () => {
