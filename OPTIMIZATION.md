@@ -7,35 +7,34 @@
 ## Текущее состояние
 
 - Протокол normal-project v1 реализован (BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR).
-- Typecheck (`tsc --noEmit`) проходит.
-- Канон-тесты (`npm run test:canon`) заявлены как 25/25 (требуют Node 22+ из-за `--experimental-strip-types`).
-- npm audit: **7 уязвимостей** (3 moderate, 4 high). Основные источники: `@capacitor/cli` (xcode), `braces`/`micromatch` (stack exhaustion DoS), `uuid`.
-- Документация (README, PROTOCOL.md, SECURITY.md, CHANGELOG.md, ANDROID_RELEASE.md, IOS_BUILD.md) актуальна и синхронизирована с релизами.
-- Связанные репозитории: NormalProject (Kotlin/Android), lean4-token-units-invariants, ya-ryadom.
+- Typecheck (`tsc --noEmit`) проходит на Node 20+.
+- Канон-тесты (`npm run test:canon`) требуют **Node.js 22+** (флаг `--experimental-strip-types`). На Node 20 не запускаются.
+- npm audit после `npm install --legacy-peer-deps`: **3 moderate** уязвимости (ранее было 7, включая 4 high). Основные high-проблемы с braces/micromatch/vite обойдены или исправлены при чистой установке.
+- Документация актуальна. Связанные репозитории: NormalProject (Kotlin/Android прототип), lean4-token-units-invariants, ya-ryadom.
 
 ## Приоритетный план оптимизации
 
 ### P0 — Безопасность (ближайшие 1–2 недели)
-- [ ] Обновить / зафиксировать high-severity: `braces`, `micromatch`, `uuid`.
-- [ ] Оценить и запланировать обновление `@capacitor/*` (сейчас major-jump в fixAvailable).
-- [ ] Добавить `npm audit --audit-level=high` в GitHub Actions (fail job при high/critical).
-- [ ] Проверить и обновить `package-lock.json` после правок.
+- [x] Оценить текущий audit после чистой установки (3 moderate).
+- [ ] Зафиксировать или обновить оставшиеся moderate (uuid и зависимости Capacitor).
+- [ ] Добавить `npm audit --audit-level=moderate` в GitHub Actions (fail при high/critical).
+- [ ] Использовать `--legacy-peer-deps` в CI до разрешения peer-dep конфликтов.
 
 ### P1 — CI и тесты
-- [ ] Перевести test:canon на Node 22+ в workflow (или добавить matrix).
+- [ ] Перевести test:canon на Node 22+ в workflow (matrix или обязательный runtime).
 - [ ] Сделать typecheck + test:canon обязательными перед релизом.
 - [ ] Добавить базовый coverage report.
 - [ ] Линт (`npm run lint`) в CI.
 
 ### P1 — Документация и синхронизация
-- [ ] Поддерживать секцию «Состояние проекта» в README в актуальном виде после каждого значимого изменения.
-- [ ] Явно документировать соответствие с NormalProject и Lean-репозиторием.
+- [x] Обновить секцию «Состояние проекта» в README (учтено требование Node 22 и текущий audit).
+- [ ] Явно документировать соответствие с NormalProject и Lean-репозиторием (ссылки уже добавлены).
 - [ ] Обновить ROADMAP.md при появлении новых целей.
 
 ### P2 — Сборка и релизы
-- [ ] Проверить release.yml на актуальность Node/Android/iOS.
+- [ ] Проверить release.yml на актуальность Node (22+)/Android/iOS.
 - [ ] Оптимизировать размер APK (ProGuard/R8, исключение неиспользуемых ресурсов).
-- [ ] Документировать минимальные требования (Node, Android SDK, Xcode).
+- [ ] Документировать минимальные требования (Node 22, Android SDK, Xcode).
 
 ### P2 — Код и архитектура
 - [ ] Провести ревью offline-first и swarm-логики.
@@ -48,10 +47,11 @@
 
 ## Рекомендуемые следующие шаги
 
-1. Создать ветку `security/deps-audit` и обновить high-severity зависимости.
-2. Добавить audit + typecheck + tests в `.github/workflows/`.
-3. После правок обновить секцию состояния в README и CHANGELOG.
+1. Обновить GitHub Actions workflow для Node 22 и `npm ci --legacy-peer-deps`.
+2. Добавить audit step.
+3. Проверить и зафиксировать оставшиеся moderate-уязвимости.
+4. После правок обновить CHANGELOG и версию.
 
 ---
 
-*Документ создан автоматически на основе анализа репозитория. Обновляйте по мере выполнения пунктов.*
+*Документ обновлён на основе локального анализа (Node 20.20, clean install). Обновляйте по мере выполнения пунктов.*
