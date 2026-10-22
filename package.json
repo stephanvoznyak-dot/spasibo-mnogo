@@ -22,7 +22,7 @@
     "dev:app": "node scripts/dev-standalone.mjs",
     "build:standalone": "node scripts/build-standalone.mjs",
     "restore:store": "node scripts/restore-store.mjs",
-    "test:canon": "node --experimental-strip-types --test src/protocol/*.test.ts src/storage/*.test.ts",
+    "test:canon": "tsx --test src/protocol/*.test.ts src/storage/*.test.ts",
     "setup:ios": "node scripts/setup-ios.mjs",
     "cap:sync:ios": "npm run build:standalone && npx cap sync ios",
     "cap:sync:android": "npm run build:standalone && npx cap sync android",
@@ -115,6 +115,7 @@
     "globals": "^15.15.0",
     "playwright": "^1.62.0",
     "prettier": "^3.4.0",
+    "tsx": "^4.19.0",
     "typescript-eslint": "^8.56.1"
   }
 }
