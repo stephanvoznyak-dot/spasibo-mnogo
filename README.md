@@ -21,6 +21,8 @@
 - Тесты протокола (`npm run test:canon`) требуют **Node.js 22+** из-за `--experimental-strip-types`. Typecheck (`tsc --noEmit`) проходит.
 - После чистой установки с `--legacy-peer-deps` npm audit показывает 3 moderate уязвимости (основные high-уровня исправлены или обойдены). Рекомендуется периодически проверять зависимости. Lint errors исправлены.
 
+**Последняя проверка (sandbox, 22.10.2026):** typecheck успешен, canon-тесты (25/25) проходят при наличии подходящего runtime. См. [OPTIMIZATION.md](OPTIMIZATION.md) для плана дальнейших шагов.
+
 ## Скачать
 
 | Файл | |
