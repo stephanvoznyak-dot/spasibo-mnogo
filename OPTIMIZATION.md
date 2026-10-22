@@ -4,13 +4,13 @@
 **Репозиторий:** spasibo-mnogo (основной промышленный образец Normal Project)  
 **Версия на момент анализа:** 1.3.12
 
-## Текущее состояние (sandbox Node v20.20.2)
+## Текущее состояние (sandbox Node v20.20.2, подтверждено 22.10.2026)
 
 - Протокол normal-project v1 реализован (BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR).
-- Typecheck (`tsc --noEmit`) проходит успешно после чистой установки с `--legacy-peer-deps`.
+- Typecheck (`tsc --noEmit`) проходит успешно после чистой установки с `--legacy-peer-deps` (подтверждено в этой сессии).
 - Канон-тесты (`npm run test:canon`) требуют **Node.js 22+** (флаг `--experimental-strip-types`). На Node 20 не запускаются.
 - Lint (`npm run lint`): исправлены 3 error (пустой catch, prefer-const, control-regex с eslint-disable). Остались warnings.
-- npm audit: **3 moderate** уязвимости (uuid через Capacitor/xcode).
+- npm audit: **3 moderate** уязвимости (uuid через Capacitor/xcode) — подтверждено.
 - Документация и связи с NormalProject, lean4-token-units-invariants, ya-ryadom актуальны.
 
 ## Приоритетный план оптимизации
@@ -53,6 +53,7 @@
 - Обновлены ссылки и описание соответствия проектов в README.
 - Добавлен CI workflow (.github/workflows/ci.yml) с typecheck, lint, test:canon на Node 22 и audit.
 - release.yml обновлён для `--legacy-peer-deps` и добавлен audit step.
+- Повторное подтверждение typecheck и audit в этой сессии анализа.
 
 ## Рекомендуемые следующие шаги
 
