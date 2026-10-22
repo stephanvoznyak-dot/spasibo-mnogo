@@ -11,7 +11,7 @@
 Канал: [t.me/+buaSHWKuVTY2ZmNi](https://t.me/+buaSHWKuVTY2ZmNi)  
 Автор концепции: **Ларионов Пётр** · +7 903 606-00-06 · [@Peterlarionov](https://t.me/Peterlarionov)
 
-Версия **1.3.12** (актуализировано 21 октября 2026).
+Версия **1.3.12** (актуализировано 22 октября 2026).
 
 ## Состояние проекта
 
@@ -19,7 +19,7 @@
 - Протокол реализован: BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR-обмен.
 - Связан с нативным Android-прототипом в репозитории [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и формализациями на Lean 4 ([lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants)).
 - Тесты протокола (`npm run test:canon`) требуют **Node.js 22+** из-за `--experimental-strip-types`. Typecheck (`tsc --noEmit`) проходит.
-- После чистой установки с `--legacy-peer-deps` npm audit показывает 3 moderate уязвимости (основные high-уровня исправлены или обойдены). Рекомендуется периодически проверять зависимости.
+- После чистой установки с `--legacy-peer-deps` npm audit показывает 3 moderate уязвимости (основные high-уровня исправлены или обойдены). Рекомендуется периодически проверять зависимости. Lint errors исправлены.
 
 ## Скачать
 
