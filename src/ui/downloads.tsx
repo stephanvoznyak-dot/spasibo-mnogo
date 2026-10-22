@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Download, FileArchive, FileCode2, Smartphone } from "lucide-react";
+import { useState } from "react";
+import { Download, FileArchive, FileCode2, Smartphone, X } from "lucide-react";
 import { t, type Lang } from "./i18n";
 import { useApp } from "./store";
 import { Panel } from "./screens-helpers";
@@ -51,166 +51,72 @@ const FILES: FileSpec[] = [
   },
 ];
 
-const MIME: Record<string, string> = {
-  ".apk": "application/vnd.android.package-archive",
-  ".zip": "application/zip",
-  ".html": "text/html",
-};
-
-function mimeOf(name: string) {
-  const dot = name.lastIndexOf(".");
-  return MIME[dot >= 0 ? name.slice(dot).toLowerCase() : ""] ?? "application/octet-stream";
-}
-
-function isIos() {
-  const ua = navigator.userAgent;
-  return /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-}
-
-/** Preview frame, iPhone and the installed app cannot save via <a download>. */
-function useHandoff() {
-  const [handoff, setHandoff] = useState(true);
-  useEffect(() => {
-    const cap = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
-    let framed = false;
-    try {
-      framed = window.self !== window.top;
-    } catch {
-      framed = true;
-    }
-    const { protocol, hostname } = window.location;
-    const packaged =
-      Boolean(cap?.isNativePlatform?.()) ||
-      protocol === "file:" ||
-      protocol === "capacitor:" ||
-      protocol === "ionic:" ||
-      (protocol === "https:" && (hostname === "localhost" || hostname === "127.0.0.1"));
-    setHandoff(isIos() || framed || packaged);
-  }, []);
-  return handoff;
+function openOutside(url: string) {
+  const opened = window.open(url, "_blank", "noopener,noreferrer");
+  return Boolean(opened);
 }
 
 export function DownloadButtons({ lang, compact = false }: { lang?: Lang; compact?: boolean }) {
   const storeLang = useApp((s) => s.settings.lang);
   const resolved = lang ?? storeLang;
-  const handoff = useHandoff();
   const [note, setNote] = useState<string | null>(null);
-  const [ready, setReady] = useState<{ name: string; file: File } | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
-  const [link, setLink] = useState<string | null>(null);
 
-  function rememberLink(url: string) {
-    setLink(url);
-    void navigator.clipboard?.writeText(url).catch(() => undefined);
-  }
-
-  async function saveHandoff(f: FileSpec) {
-    if (ready?.name === f.name && typeof navigator.share === "function") {
-      try {
-        await navigator.share({ files: [ready.file], title: f.name });
-        setNote(t(resolved, "downloadSaved"));
-        setReady(null);
-        return;
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-      }
-    }
-
-    // Copy before any await so iOS still counts this tap as a user gesture.
-    rememberLink(f.remote);
-    setNote(t(resolved, "downloadCopied"));
-
-    // Opening GitHub inside the preview replaces the app with a blank page.
-    const popup = isIos() ? null : window.open(f.remote, "_blank", "noopener,noreferrer");
-    if (popup) {
+  function save(event: { preventDefault: () => void }, file: FileSpec) {
+    event.preventDefault();
+    const local = new URL(file.local, window.location.href).href;
+    if (openOutside(local) || openOutside(file.remote)) {
       setNote(t(resolved, "downloadStarted"));
       return;
     }
-
-    setBusy(f.name);
-    try {
-      const res = await fetch(f.local);
-      if (!res.ok) throw new Error("missing");
-      const file = new File([await res.arrayBuffer()], f.name, { type: mimeOf(f.name) });
-      if (navigator.canShare?.({ files: [file] })) {
-        setReady({ name: f.name, file });
-        setNote(t(resolved, "downloadTapAgain"));
-      }
-    } catch {
-      /* the copied link is the fallback */
-    } finally {
-      setBusy(null);
-    }
+    void navigator.clipboard.writeText(file.remote).then(
+      () => setNote(t(resolved, "downloadCopied")),
+      () => setNote(t(resolved, "downloadCopyFail")),
+    );
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      {FILES.map((f) => {
-        const Icon = f.icon;
-        const label = ready?.name === f.name ? t(resolved, "downloadSaveNow") : t(resolved, f.key);
+    <div className="flex flex-col gap-3">
+      <p className="text-[13px] leading-snug text-muted">{note ?? t(resolved, "downloadHint")}</p>
+      {FILES.map((file) => {
+        const Icon = file.icon;
         return (
           <a
-            key={f.name}
-            href={handoff ? f.remote : f.local}
-            {...(handoff
-              ? { target: "_blank", rel: "noopener noreferrer" }
-              : { download: f.name })}
+            key={file.name}
+            href={file.local}
+            download={file.name}
+            target="_blank"
+            rel="noopener noreferrer"
             className={
-              f.primary
+              file.primary
                 ? "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md bg-accent px-4 text-center text-sm font-medium text-accent-fg"
                 : "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border border-border px-4 text-center text-sm"
             }
-            aria-busy={busy === f.name}
-            onClick={(event) => {
-              if (!handoff) return;
-              event.preventDefault();
-              void saveHandoff(f);
-            }}
+            onClick={(event) => save(event, file)}
           >
-            <Icon className="size-4 shrink-0" /> {label}
+            <Icon className="size-4 shrink-0" /> {t(resolved, file.key)}
           </a>
         );
       })}
-      <p className="text-[11px] leading-snug text-muted">{note ?? t(resolved, "downloadHint")}</p>
-      {link && (
-        <input
-          readOnly
-          value={link}
-          className="w-full rounded-md border border-border bg-bg px-2 py-2 font-mono text-[11px] text-fg"
-          onFocus={(event) => event.currentTarget.select()}
-          aria-label={t(resolved, "downloadCopied")}
-        />
-      )}
       <p className="text-[11px] leading-snug text-muted">{t(resolved, "downloadDebug")}</p>
-      <button
-        type="button"
-        className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md px-4 text-xs text-muted underline"
-        onClick={() => {
-          if (handoff) {
-            rememberLink(RELEASES_PAGE);
-            setNote(t(resolved, "downloadCopied"));
-            return;
-          }
-          window.open(RELEASES_PAGE, "_blank", "noopener,noreferrer");
-        }}
-      >
-        {t(resolved, "releases")} · GitHub
-      </button>
       {!compact && (
-        <button
-          type="button"
-          className="inline-flex min-h-9 cursor-pointer items-center justify-center gap-2 rounded-md px-4 text-xs text-muted underline"
-          onClick={() => {
-            if (handoff) {
-              rememberLink(REPO_PAGE);
-              setNote(t(resolved, "downloadCopied"));
-              return;
-            }
-            window.open(REPO_PAGE, "_blank", "noopener,noreferrer");
-          }}
+        <a
+          href={RELEASES_PAGE}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-md px-4 text-xs text-muted underline"
+        >
+          {t(resolved, "releases")} · GitHub
+        </a>
+      )}
+      {!compact && (
+        <a
+          href={REPO_PAGE}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex min-h-9 cursor-pointer items-center justify-center rounded-md px-4 text-xs text-muted underline"
         >
           {t(resolved, "sourceRepo")} · GitHub
-        </button>
+        </a>
       )}
     </div>
   );
@@ -225,5 +131,33 @@ export function DownloadPanel({ compact = false }: { compact?: boolean }) {
         <DownloadButtons lang={lang} compact={compact} />
       </div>
     </Panel>
+  );
+}
+
+export function DownloadSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const lang = useApp((s) => s.settings.lang);
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/55" onClick={onClose}>
+      <div
+        className="max-h-[88dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-border bg-surface px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-lg"
+        onClick={(event) => event.stopPropagation()}
+        role="dialog"
+        aria-label={t(lang, "download")}
+      >
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <p className="text-sm font-medium">{t(lang, "download")}</p>
+          <button
+            type="button"
+            className="inline-flex size-11 items-center justify-center rounded-md border border-border"
+            onClick={onClose}
+            aria-label={t(lang, "back")}
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+        <DownloadButtons lang={lang} compact />
+      </div>
+    </div>
   );
 }
