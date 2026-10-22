@@ -16,6 +16,7 @@ export const MAX_AMOUNT = 1_000_000_000_000; // 10^12
  */
 export function sanitizeNote(note: string): string {
   return note
+    /* eslint-disable-next-line no-control-regex */
     .replace(/[\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069]/g, "")
     .slice(0, 280);
 }
