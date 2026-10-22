@@ -65,7 +65,7 @@ describe("M2 as separate event (audit 1.1)", () => {
       amount: 3,
     });
     const final = signM2(m1, b.secretKey, b.publicKey);
-    let history = appendAct([], m1).history;
+    const history = appendAct([], m1).history;
     const once = appendM2(history, final.hash, final.sigM2!);
     const twice = appendM2(once.history, final.hash, final.sigM2!);
     assert.equal(once.added, true);
