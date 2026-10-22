@@ -9,7 +9,7 @@
 - Протокол normal-project v1 реализован (BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR).
 - Typecheck (`tsc --noEmit`) проходит успешно после чистой установки с `--legacy-peer-deps` (подтверждено в этой сессии).
 - Канон-тесты (`npm run test:canon`) требуют **Node.js 22+** (флаг `--experimental-strip-types`). На Node 20 не запускаются.
-- Lint (`npm run lint`): исправлены 3 error (пустой catch, prefer-const, control-regex с eslint-disable). Остались warnings.
+- Lint (`npm run lint`): 0 ошибок, 10 предупреждений (в основном react-refresh, unused-vars, exhaustive-deps).
 - npm audit: **3 moderate** уязвимости (uuid через Capacitor/xcode) — подтверждено.
 - Документация и связи с NormalProject, lean4-token-units-invariants, ya-ryadom актуальны.
 
@@ -49,7 +49,7 @@
 ## Выполненные действия (22.10.2026)
 
 - Проведён локальный анализ в sandbox: typecheck OK, audit 3 moderate, test:canon требует Node 22.
-- Исправлены lint errors в коде (prefer-const, empty catch, control-regex).
+- Lint: 0 errors, 10 warnings.
 - Обновлены ссылки и описание соответствия проектов в README.
 - Добавлен CI workflow (.github/workflows/ci.yml) с typecheck, lint, test:canon на Node 22 и audit.
 - release.yml обновлён для `--legacy-peer-deps` и добавлен audit step.
@@ -66,24 +66,20 @@
 
 *Документ обновлён на основе локального анализа в sandbox (Node 20.20, clean install) 22 октября 2026. Обновляйте по мере выполнения пунктов.*
 
-## Обновление анализа (22.10.2026, sandbox Node 20.20)
+## Обновление анализа (22.10.2026, sandbox Node 20.20) — подтверждено
 
 ### Результаты локальной проверки
 - Typecheck (`tsc --noEmit`): проходит успешно.
 - Lint: 0 ошибок, 10 предупреждений (в основном react-refresh, unused-vars, exhaustive-deps).
-- Audit (после `npm install --legacy-peer-deps`): 7 уязвимостей (3 moderate, 4 high).
-  - high: braces/micromatch (vite-plugin-singlefile), vite (несколько).
-  - moderate: uuid (через @capacitor/cli / xcode).
+- Audit (после `npm install --legacy-peer-deps`): 3 moderate уязвимости (uuid через @capacitor/cli / xcode).
 - Canon-тесты (`test:canon`): требуют Node.js ≥22 из-за `--experimental-strip-types`. На Node 20 не запускаются.
-- Smoke-тест ya-ryadom: проходит.
+- ya-ryadom typecheck (bot/web): проходит.
 
 ### Выполненные правки
-- Исправлены 2 error-уровня в ESLint (пустой catch и no-control-regex).
-- Коммит: fix: resolve ESLint errors...
+- Документ OPTIMIZATION.md обновлён подтверждением текущего состояния.
 
 ### Рекомендации
-1. Обновить зависимости (особенно vite, uuid, Capacitor) для устранения high/moderate.
+1. Обновить зависимости (особенно uuid, Capacitor) для устранения moderate.
 2. Добавить coverage в CI.
 3. Рассмотреть миграцию на Node 22 в локальной разработке.
 4. Оптимизация размера APK (ProGuard) остаётся актуальной.
-
