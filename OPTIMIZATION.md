@@ -18,12 +18,12 @@
 ### P0 — Безопасность (ближайшие 1–2 недели)
 - [x] Оценить текущий audit после чистой установки (3 moderate).
 - [ ] Зафиксировать или обновить оставшиеся moderate (uuid и зависимости Capacitor).
-- [ ] Добавить `npm audit --audit-level=moderate` в GitHub Actions (fail при high/critical).
-- [ ] Использовать `--legacy-peer-deps` в CI до разрешения peer-dep конфликтов.
+- [x] Добавить `npm audit --audit-level=moderate` в GitHub Actions (fail при high/critical).
+- [x] Использовать `--legacy-peer-deps` в CI до разрешения peer-dep конфликтов.
 
 ### P1 — CI и тесты
-- [ ] Перевести test:canon на Node 22+ в workflow (matrix или обязательный runtime).
-- [ ] Сделать typecheck + test:canon обязательными перед релизом.
+- [x] Перевести test:canon на Node 22+ в workflow (matrix или обязательный runtime).
+- [x] Сделать typecheck + test:canon обязательными перед релизом.
 - [ ] Добавить базовый coverage report.
 - [x] Линт (`npm run lint`) — ошибки исправлены в коде; рекомендуется добавить в CI.
 
@@ -33,7 +33,7 @@
 - [ ] Обновить ROADMAP.md при появлении новых целей.
 
 ### P2 — Сборка и релизы
-- [ ] Проверить release.yml на актуальность Node (22+)/Android/iOS.
+- [x] Проверить release.yml на актуальность Node (22+)/Android/iOS.
 - [ ] Оптимизировать размер APK (ProGuard/R8, исключение неиспользуемых ресурсов).
 - [ ] Документировать минимальные требования (Node 22, Android SDK, Xcode).
 
@@ -51,13 +51,15 @@
 - Проведён локальный анализ в sandbox: typecheck OK, audit 3 moderate, test:canon требует Node 22.
 - Исправлены lint errors в коде (prefer-const, empty catch, control-regex).
 - Обновлены ссылки и описание соответствия проектов в README.
+- Добавлен CI workflow (.github/workflows/ci.yml) с typecheck, lint, test:canon на Node 22 и audit.
+- release.yml обновлён для `--legacy-peer-deps` и добавлен audit step.
 
 ## Рекомендуемые следующие шаги
 
-1. Обновить GitHub Actions workflow для Node 22 и `npm ci --legacy-peer-deps`.
-2. Добавить audit step.
-3. Проверить и зафиксировать оставшиеся moderate-уязвимости.
-4. После правок обновить CHANGELOG и версию.
+1. Зафиксировать оставшиеся moderate-уязвимости (uuid).
+2. Добавить coverage report.
+3. Оптимизировать размер APK.
+4. После правок обновить CHANGELOG и версию при необходимости.
 
 ---
 

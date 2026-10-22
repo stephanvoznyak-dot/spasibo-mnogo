@@ -30,7 +30,9 @@ jobs:
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - name: Install
-        run: npm ci --ignore-scripts && npm run restore:store
+        run: npm ci --legacy-peer-deps --ignore-scripts && npm run restore:store
+      - name: Audit (moderate+)
+        run: npm audit --audit-level=moderate || true
       - name: Standalone HTML + zips
         run: npm run pack:downloads
       - name: Capacitor Android sync
