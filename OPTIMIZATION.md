@@ -65,3 +65,25 @@
 ---
 
 *Документ обновлён на основе локального анализа в sandbox (Node 20.20, clean install) 22 октября 2026. Обновляйте по мере выполнения пунктов.*
+
+## Обновление анализа (22.10.2026, sandbox Node 20.20)
+
+### Результаты локальной проверки
+- Typecheck (`tsc --noEmit`): проходит успешно.
+- Lint: 0 ошибок, 10 предупреждений (в основном react-refresh, unused-vars, exhaustive-deps).
+- Audit (после `npm install --legacy-peer-deps`): 7 уязвимостей (3 moderate, 4 high).
+  - high: braces/micromatch (vite-plugin-singlefile), vite (несколько).
+  - moderate: uuid (через @capacitor/cli / xcode).
+- Canon-тесты (`test:canon`): требуют Node.js ≥22 из-за `--experimental-strip-types`. На Node 20 не запускаются.
+- Smoke-тест ya-ryadom: проходит.
+
+### Выполненные правки
+- Исправлены 2 error-уровня в ESLint (пустой catch и no-control-regex).
+- Коммит: fix: resolve ESLint errors...
+
+### Рекомендации
+1. Обновить зависимости (особенно vite, uuid, Capacitor) для устранения high/moderate.
+2. Добавить coverage в CI.
+3. Рассмотреть миграцию на Node 22 в локальной разработке.
+4. Оптимизация размера APK (ProGuard) остаётся актуальной.
+
