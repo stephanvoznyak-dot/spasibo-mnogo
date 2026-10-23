@@ -10,7 +10,7 @@
 - Typecheck (`tsc --noEmit`) проходит успешно после чистой установки с `--legacy-peer-deps`.
 - Канон-тесты (`npm run test:canon`) — **25/25 проходят** на Node 20+ через `tsx`. Требование Node 22+ для `--experimental-strip-types` устарело.
 - Lint (`npm run lint`): 0 ошибок, 10 предупреждений (react-refresh, unused-vars, exhaustive-deps).
-- npm audit: **3 moderate** уязвимости (uuid через Capacitor / xcode).
+- npm audit: **0** уязвимостей (после overrides для uuid >=11.1.1).
 - Документация и связи с [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и [lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants) актуальны.
 - CI остаётся на Node 22 для совместимости с `@capacitor/cli` и `@tanstack/react-start`.
 
@@ -18,7 +18,7 @@
 
 ### P0 — Безопасность (ближайшие 1–2 недели)
 - [x] Оценить текущий audit после чистой установки (3 moderate).
-- [ ] Зафиксировать или обновить оставшиеся moderate (uuid и зависимости Capacitor).
+- [x] Зафиксировать или обновить оставшиеся moderate (uuid и зависимости Capacitor).
 - [x] Добавить `npm audit --audit-level=moderate` в GitHub Actions (fail при high/critical).
 - [x] Использовать `--legacy-peer-deps` в CI до разрешения peer-dep конфликтов.
 
@@ -29,7 +29,7 @@
 - [x] Линт (`npm run lint`) — ошибки исправлены; рекомендуется оставить в CI.
 
 ### P1 — Документация и синхронизация
-- [x] Обновить секцию «Состояние проекта» в README (учтено: тесты на Node 20+, audit 3 moderate).
+- [x] Обновить секцию «Состояние проекта» в README (учтено: тесты на Node 20+, audit 0 после overrides).
 - [x] Явно документировать соответствие с NormalProject и Lean-репозиторием.
 - [ ] Обновить ROADMAP.md при появлении новых целей.
 
@@ -55,17 +55,16 @@
 - release.yml обновлён (`--legacy-peer-deps` + audit).
 
 ### 23.10.2026 (текущая сессия)
-- Повторная проверка: typecheck OK, lint 0 errors / 10 warnings, test:canon 25/25, audit 3 moderate.
+- Повторная проверка: typecheck OK, lint 0 errors / 10 warnings, test:canon 25/25, audit 0 (overrides uuid).
 - Подтверждено, что `test:canon` работает на Node 20+ через `tsx`.
 - README и OPTIMIZATION.md синхронизированы с актуальным состоянием.
-- Подготовлены задачи P0 (уязвимости uuid) и P1 (coverage).
+- Устранены moderate уязвимости uuid через overrides; подготовлена задача P1 (coverage).
 
 ## Рекомендуемые следующие шаги
 
-1. **P0**: устранить или зафиксировать 3 moderate (uuid через Capacitor).
-2. **P1**: добавить coverage report для `test:canon`.
-3. **P2**: оптимизация размера APK (ProGuard/R8).
-4. После значимых правок — обновить CHANGELOG и при необходимости версию.
+1. **P1**: добавить coverage report для `test:canon`.
+2. **P2**: оптимизация размера APK (ProGuard/R8).
+3. После значимых правок — обновить CHANGELOG и при необходимости версию.
 
 ---
 
