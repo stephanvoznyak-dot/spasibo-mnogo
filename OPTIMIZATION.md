@@ -25,7 +25,7 @@
 ### P1 — CI и тесты
 - [x] Перевести test:canon на Node 22+ в workflow (matrix или обязательный runtime).
 - [x] Сделать typecheck + test:canon обязательными перед релизом.
-- [ ] Добавить базовый coverage report.
+- [ ] Добавить базовый coverage report (рекомендуется c8 или vitest).
 - [x] Линт (`npm run lint`) — ошибки исправлены; рекомендуется оставить в CI.
 
 ### P1 — Документация и синхронизация
@@ -55,16 +55,17 @@
 - release.yml обновлён (`--legacy-peer-deps` + audit).
 
 ### 23.10.2026 (текущая сессия)
-- Повторная проверка: typecheck OK, lint 0 errors / 10 warnings, test:canon 25/25, audit 0 (overrides uuid).
+- Повторная проверка в sandbox: typecheck OK, lint 0 errors / 10 warnings, test:canon 25/25, audit 0 (overrides uuid).
 - Подтверждено, что `test:canon` работает на Node 20+ через `tsx`.
 - README и OPTIMIZATION.md синхронизированы с актуальным состоянием.
 - Устранены moderate уязвимости uuid через overrides; подготовлена задача P1 (coverage).
 
 ## Рекомендуемые следующие шаги
 
-1. **P1**: добавить coverage report для `test:canon`.
+1. **P1**: добавить coverage report для `test:canon` (c8 + скрипт в package.json).
 2. **P2**: оптимизация размера APK (ProGuard/R8).
 3. После значимых правок — обновить CHANGELOG и при необходимости версию.
+4. Создать issue для следующих задач: coverage, APK size, синхронизация с Lean.
 
 ---
 
