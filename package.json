@@ -99,19 +99,29 @@
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.3.0",
     "tw-animate-css": "^1.3.4",
-    "zod": "^3.24.0",
+    "typescript": "^5.7.0",
+    "vaul": "^1.1.2",
+    "vite": "^8.3.3",
+    "vite-plugin-singlefile": "^2.3.4",
+    "zod": "^4.4.0",
     "zustand": "^5.0.0"
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "c8": "^10.1.3",
-    "eslint": "^9.39.5",
+    "@eslint/js": "^9.20.0",
+    "@types/node": "^22.16.5",
+    "@types/pg": "^8.11.10",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "c8": "^12.0.0",
+    "eslint": "^9.20.0",
+    "eslint-config-prettier": "^10.1.1",
+    "eslint-plugin-prettier": "^5.2.6",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^15.15.0",
+    "playwright": "^1.62.0",
     "prettier": "^3.4.0",
     "tsx": "^4.19.0",
-    "typescript": "^5.7.0",
-    "typescript-eslint": "^8.18.0",
-    "vite": "^6.0.0"
+    "typescript-eslint": "^8.56.1"
   }
 }
