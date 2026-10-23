@@ -19,9 +19,9 @@
 - Протокол реализован: BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR-обмен.
 - Связан с нативным Android-прототипом в репозитории [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и формализациями на Lean 4 ([lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants)).
 - Тесты протокола (`npm run test:canon`) требуют **Node.js 22+** из-за `--experimental-strip-types`. Typecheck (`tsc --noEmit`) проходит.
-- После чистой установки с `--legacy-peer-deps` npm audit показывает 3 moderate уязвимости (основные high-уровня исправлены или обойдены). Рекомендуется периодически проверять зависимости. Lint errors исправлены.
+- После чистой установки с `--legacy-peer-deps` npm audit показывает 3 moderate уязвимости (uuid через Capacitor/xcode). Lint: 0 errors, 10 warnings.
 
-**Последняя проверка (sandbox, 22.10.2026):** typecheck успешен, canon-тесты (25/25) проходят при наличии подходящего runtime. См. [OPTIMIZATION.md](OPTIMIZATION.md) для плана дальнейших шагов.
+**Последняя проверка (sandbox, 23.10.2026):** typecheck успешен, lint 0 errors / 10 warnings, audit 3 moderate. Canon-тесты требуют Node 22+. См. [OPTIMIZATION.md](OPTIMIZATION.md) для плана дальнейших шагов.
 
 ## Скачать
 
