@@ -92,3 +92,15 @@
 - Audit — 3 moderate.
 
 Созданы драфт-задачи (issues) для P0 уязвимостей и coverage.
+
+## Подтверждение сессии (23.10.2026)
+
+Локальная проверка в sandbox (Node v20.20.2, clean install --legacy-peer-deps):
+- `npm run typecheck` — успешно.
+- `npm run lint` — 0 errors, 10 warnings.
+- `npm run test:canon` — **все 25 тестов проходят** (tsx обрабатывает TypeScript, флаг --experimental-strip-types не требуется).
+- Audit — 3 moderate (uuid).
+
+Документация о требовании Node 22 для test:canon устарела (скрипт использует tsx). CI остаётся на Node 22 для совместимости с зависимостями (@capacitor/cli, @tanstack/react-start).
+
+Рекомендуется обновить README соответственно.
