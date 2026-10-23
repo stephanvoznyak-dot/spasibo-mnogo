@@ -20,9 +20,9 @@
 - Связан с нативным Android-прототипом в репозитории [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и формализациями на Lean 4 ([lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants)).
 - Typecheck (`tsc --noEmit`) проходит. Lint: 0 errors, 10 warnings.
 - Канон-тесты (`npm run test:canon`) — **25/25 проходят** на Node 20 (через `tsx`). Ранее упоминавшееся требование Node 22+ для `--experimental-strip-types` больше не актуально.
-- После чистой установки с `--legacy-peer-deps` npm audit показывает 3 moderate уязвимости (uuid через Capacitor/xcode).
+- После чистой установки с `--legacy-peer-deps` и overrides для uuid npm audit показывает 0 уязвимостей.
 
-**Последняя проверка (sandbox, 23.10.2026):** typecheck успешен, lint 0 errors / 10 warnings, test:canon 25/25 OK, audit 3 moderate. См. [OPTIMIZATION.md](OPTIMIZATION.md) для плана дальнейших шагов.
+**Последняя проверка (sandbox, 23.10.2026):** typecheck успешен, lint 0 errors / 10 warnings, test:canon 25/25 OK, audit 0 (после overrides). См. [OPTIMIZATION.md](OPTIMIZATION.md) для плана дальнейших шагов.
 
 ## Скачать
 
