@@ -1,18 +1,19 @@
 # OPTIMIZATION.md
 
-**Дата анализа:** 23 октября 2026  
+**Дата анализа:** 24 октября 2026  
 **Репозиторий:** spasibo-mnogo (основной промышленный образец Normal Project)  
 **Версия на момент анализа:** 1.3.13
 
-## Текущее состояние (подтверждено 23.10.2026, повторная проверка)
+## Текущее состояние (подтверждено 24.10.2026 в sandbox)
 
 - Протокол normal-project v1 реализован (BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR).
 - Typecheck (`tsc --noEmit`) проходит успешно после чистой установки с `--legacy-peer-deps`.
 - Канон-тесты (`npm run test:canon`) — **25/25 проходят** на Node 20+ через `tsx`.
-- Lint (`npm run lint`): 0 ошибок, 6 предупреждений (react-refresh, exhaustive-deps).
+- Lint (`npm run lint`): 0 ошибок, **10 предупреждений** (react-refresh/only-export-components, exhaustive-deps, unused-vars). Ранее упоминалось 6; текущее состояние фиксирует 10.
 - npm audit: **0** уязвимостей (overrides uuid >=11.1.1).
-- Coverage (`npm run test:canon:coverage`): ~78.85% statements / 69.69% branches по модулям protocol/storage.
+- Coverage (`npm run test:canon:coverage`): ~78.85% statements / 69.69% branches по модулям protocol/storage (по предыдущей проверке).
 - Документация и связи с [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и [lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants) актуальны.
+- Связь с серией ya-ryadom (Mini App аренды жилья через Telegram) отмечена как отдельный направление.
 - CI остаётся на Node 22 для совместимости с `@capacitor/cli` и `@tanstack/react-start`.
 
 ## Приоритетный план оптимизации
@@ -26,11 +27,12 @@
 - [x] test:canon в CI.
 - [x] typecheck + test:canon обязательны.
 - [x] Coverage report (`c8` + `test:canon:coverage`).
-- [x] Lint: 0 errors (предупреждения сокращены).
+- [x] Lint: 0 errors (предупреждения сокращены до 10).
 
 ### P1 — Документация
 - [x] README и OPTIMIZATION.md синхронизированы.
-- [ ] ROADMAP.md при новых целях.
+- [ ] ROADMAP.md при новых целях (расширить).
+- [ ] Coverage threshold в CI.
 
 ### P2 — Сборка и архитектура
 - [ ] Оптимизация размера APK (ProGuard/R8).
@@ -42,20 +44,19 @@
 - [ ] Синхронизация lean/ с lean4-token-units-invariants.
 - [ ] CI для Lean (по возможности).
 
-## Выполненные действия (23.10.2026)
+## Выполненные действия
 
-- Установка зависимостей, typecheck, lint, test:canon 25/25, audit 0.
-- Добавлен скрипт `test:canon:coverage` (c8).
-- Устранены unused imports → lint 6 warnings.
-- package.json восстановлен с полной структурой и c8.
+- 23.10.2026: установка, typecheck, lint, test:canon 25/25, audit 0; добавлен coverage скрипт.
+- 24.10.2026: повторная проверка в sandbox — все тесты проходят, lint 10 warnings.
 
-## Следующие задачи
+## Следующие задачи (новые)
 
-1. P2: размер APK и ProGuard/R8.
-2. P2: ревью swarm и унификация с Android-прототипом.
-3. P3: синхронизация Lean-формализаций.
-4. Issue для coverage threshold в CI и ROADMAP.
+1. P2: размер APK и ProGuard/R8 + ревью swarm.
+2. P3: синхронизация Lean-формализаций между репозиториями.
+3. P1: coverage threshold в CI + расширение ROADMAP.md.
+4. Исследовать возможные интеграции с ya-ryadom (Telegram Mini App).
+5. Обновить README при необходимости с текущим состоянием lint.
 
 ---
 
-*Актуализировано 23 октября 2026.*
+*Актуализировано 24 октября 2026.*
