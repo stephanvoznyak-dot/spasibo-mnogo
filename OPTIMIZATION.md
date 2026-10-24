@@ -7,9 +7,9 @@
 ## Текущее состояние (подтверждено 24.10.2026 в sandbox)
 
 - Протокол normal-project v1 реализован (BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR).
-- Typecheck (`tsc --noEmit`) проходит успешно после чистой установки с `--legacy-peer-deps`.
+- Typecheck (`tsc --noEmit`) проходит успешно после исправления ошибок типизации в UI.
 - Канон-тесты (`npm run test:canon`) — **25/25 проходят** на Node 20+ через `tsx`.
-- Lint (`npm run lint`): 0 ошибок, **10 предупреждений** (react-refresh/only-export-components, exhaustive-deps, unused-vars). Ранее упоминалось 6; текущее состояние фиксирует 10.
+- Lint (`npm run lint`): 0 ошибок, **5 предупреждений** (react-refresh/only-export-components, exhaustive-deps).
 - npm audit: **0** уязвимостей (overrides uuid >=11.1.1).
 - Coverage (`npm run test:canon:coverage`): ~78.85% statements / 69.69% branches по модулям protocol/storage (по предыдущей проверке).
 - Документация и связи с [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и [lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants) актуальны.
@@ -47,15 +47,16 @@
 ## Выполненные действия
 
 - 23.10.2026: установка, typecheck, lint, test:canon 25/25, audit 0; добавлен coverage скрипт.
-- 24.10.2026: повторная проверка в sandbox — все тесты проходят, lint 10 warnings.
+- 24.10.2026: повторная проверка в sandbox — все тесты проходят; исправлены ошибки типизации (импорты, PIN-аргументы, swarm API). Lint сокращён до 5 warnings.
 
 ## Следующие задачи (новые)
 
-1. P2: размер APK и ProGuard/R8 + ревью swarm.
+1. P2: размер APK и ProGuard/R8 + ревью swarm (после адаптации API).
 2. P3: синхронизация Lean-формализаций между репозиториями.
 3. P1: coverage threshold в CI + расширение ROADMAP.md.
 4. Исследовать возможные интеграции с ya-ryadom (Telegram Mini App).
-5. Обновить README при необходимости с текущим состоянием lint.
+5. Устранить оставшиеся 5 lint-предупреждений (react-refresh, exhaustive-deps).
+6. Добавить тесты для PIN-сессии и swarm-синхронизации.
 
 ---
 

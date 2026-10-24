@@ -2,11 +2,10 @@ import { create } from "zustand";
 import { bytesToHex } from "@/crypto/bytes";
 import { createMnemonic, isValidMnemonic, normalizeMnemonic, type WordCount } from "@/crypto/bip39";
 import { deriveKeypair, fingerprintOf, parsePublicKey, publicKeyHex } from "@/crypto/keys";
-import { createSignedM1, describeAct, signM2, verifyAct } from "@/protocol/act";
+import { createSignedM1, signM2, verifyAct } from "@/protocol/act";
 import { stateToEntries } from "@/protocol/bridge";
 import { applyCycle, findCycles } from "@/protocol/clearing";
 import { appendClearing, appendM2, findCycles as findCyclesHistory, historyFromActs } from "@/protocol/history";
-import { counterparties } from "@/protocol/graph";
 import { decodeManualFallback } from "@/protocol/qr-messages";
 import type { Act, ClearingCycle, ClearingResult, Contact, History, LedgerEntry } from "@/protocol/types";
 import {
@@ -566,14 +565,14 @@ export const useApp = create<AppState>((set, get) => ({
   setPin: async (pin) => {
     const identity = get().identity;
     if (!identity?.mnemonic) throw new Error("Нет личности");
-    const blob = await sealMnemonicWithPin(identity.mnemonic, pin);
+    const blob = await sealMnemonicWithPin(pin, identity.mnemonic);
     await saveMeta(PIN_META_KEY, blob);
   },
 
   unlockWithPin: async (pin) => {
     const blob = await loadMeta<EncryptedBlob>(PIN_META_KEY);
     if (!blob) throw new Error("PIN не настроен");
-    const mnemonic = await openMnemonicWithPin(blob, pin);
+    const mnemonic = await openMnemonicWithPin(pin, blob);
     const wordCount = (mnemonic.split(" ").length === 24 ? 24 : 12) as WordCount;
     const identity = identityFromMnemonic(mnemonic, wordCount);
     set({ identity });
@@ -595,10 +594,14 @@ function applyTheme(theme: AppSettings["theme"]) {
 
 function attachSwarm(identity: Identity, get: () => AppState, set: (partial: Partial<AppState>) => void) {
   if (swarm) swarm.close();
+  const selfHex = publicKeyHex(identity.publicKey);
   swarm = startSwarm({
-    identity,
-    onPeer: (n) => set({ swarmPeers: n }),
-    onEvent: (msg) => set({ swarmEvent: msg }),
+    selfHex,
+    getHashes: () => get().history.filter((e) => e.kind === "act").map((e) => bytesToHex(e.wire.hash)),
+    getAct: (hashHex) => {
+      const e = get().history.find((ev) => ev.kind === "act" && bytesToHex(ev.wire.hash) === hashHex);
+      return e && e.kind === "act" ? e.wire : undefined;
+    },
     onAct: async (act) => {
       const hashHex = bytesToHex(act.hash);
       if (get().history.some((e) => e.kind === "act" && bytesToHex(e.wire.hash) === hashHex)) return;
@@ -608,4 +611,10 @@ function attachSwarm(identity: Identity, get: () => AppState, set: (partial: Par
       set({ history, entries: stateToEntries(deriveState(history)) });
     },
   });
+  // Simple status poll for UI
+  const id = setInterval(() => {
+    if (!swarm) { clearInterval(id); return; }
+    const st = swarm.status();
+    set({ swarmPeers: st.peers, swarmEvent: st.lastEvent });
+  }, 2000);
 }

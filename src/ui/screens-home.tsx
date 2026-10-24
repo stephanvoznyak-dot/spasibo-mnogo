@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Camera, Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { APP_VERSION } from "@/version";
-import { counterparties, useApp } from "./store";
+import { counterparties } from "@/protocol/graph";
+import { useApp } from "./store";
 import { Mono, Panel, copyText, usePartyName, useT } from "./screens-helpers";
 import { DownloadPanel } from "./downloads";
 

@@ -18,11 +18,11 @@
 - Основной промышленный образец концепта Normal Project в стеке Vite + React + Capacitor.
 - Протокол реализован: BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR-обмен.
 - Связан с нативным Android-прототипом в репозитории [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и формализациями на Lean 4 ([lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants)).
-- Typecheck (`tsc --noEmit`) проходит. Lint: 0 errors, 10 warnings.
-- Канон-тесты (`npm run test:canon`) — **25/25 проходят** на Node 20 (через `tsx`). Ранее упоминавшееся требование Node 22+ для `--experimental-strip-types` больше не актуально.
+- Typecheck (`tsc --noEmit`) проходит. Lint: 0 errors, 5 warnings (react-refresh, exhaustive-deps).
+- Канон-тесты (`npm run test:canon`) — **25/25 проходят** на Node 20 (через `tsx`).
 - После чистой установки с `--legacy-peer-deps` и overrides для uuid npm audit показывает 0 уязвимостей.
 
-**Последняя проверка (sandbox, 24.10.2026):** typecheck успешен, lint 0 errors / 10 warnings, test:canon 25/25 OK, audit 0 (после обновления zod до ^4.6.7). См. [OPTIMIZATION.md](OPTIMIZATION.md) для плана дальнейших шагов.
+**Последняя проверка (sandbox, 24.10.2026):** typecheck успешен, lint 0 errors / 5 warnings, test:canon 25/25 OK. Исправлены ошибки типизации в UI-слое (неверные импорты describeAct/counterparties, порядок аргументов PIN-функций, адаптация attachSwarm к текущему API startSwarm). См. [OPTIMIZATION.md](OPTIMIZATION.md).
 
 ## Скачать
 
