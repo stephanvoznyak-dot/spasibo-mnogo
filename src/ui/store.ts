@@ -25,7 +25,6 @@ import {
   wipeUserData,
   loadMeta,
   saveMeta,
-  deleteMeta,
   type AppSettings,
 } from "@/storage/db";
 import {
@@ -566,91 +565,47 @@ export const useApp = create<AppState>((set, get) => ({
 
   setPin: async (pin) => {
     const identity = get().identity;
-    if (!identity?.mnemonic) throw new Error("Нет мнемоники для шифрования PIN");
-    if (pin.length < 4) throw new Error("PIN: минимум 4 символа");
-    const blob = await sealMnemonicWithPin(pin, identity.mnemonic);
+    if (!identity?.mnemonic) throw new Error("Нет личности");
+    const blob = await sealMnemonicWithPin(identity.mnemonic, pin);
     await saveMeta(PIN_META_KEY, blob);
-  },
-
-  lockSession: async () => {
-    const identity = get().identity;
-    if (!identity) return;
-    const blob = await loadMeta<EncryptedBlob>(PIN_META_KEY);
-    if (!blob) throw new Error("Сначала задайте PIN в настройках");
-    // Re-seal current mnemonic if available
-    if (identity.mnemonic) {
-      // keep existing blob; mnemonic already sealed when setPin was called
-    }
-    set({
-      identity: {
-        ...identity,
-        secretKey: null,
-        mnemonic: "",
-        locked: true,
-      },
-    });
   },
 
   unlockWithPin: async (pin) => {
     const blob = await loadMeta<EncryptedBlob>(PIN_META_KEY);
     if (!blob) throw new Error("PIN не настроен");
-    const mnemonic = await openMnemonicWithPin(pin, blob);
+    const mnemonic = await openMnemonicWithPin(blob, pin);
     const wordCount = (mnemonic.split(" ").length === 24 ? 24 : 12) as WordCount;
     const identity = identityFromMnemonic(mnemonic, wordCount);
-    set({ identity: { ...identity, locked: false } });
+    set({ identity });
+    attachSwarm(identity, get, set);
   },
 
+  lockSession: async () => {
+    const identity = get().identity;
+    if (!identity) return;
+    set({ identity: { ...identity, secretKey: null, locked: true } });
+  },
 }));
 
 function applyTheme(theme: AppSettings["theme"]) {
-  if (typeof document === "undefined") return;
-  const dark =
-    theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-  document.documentElement.dataset.theme = dark ? "dark" : "light";
+  const root = document.documentElement;
+  const dark = theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  root.classList.toggle("dark", dark);
 }
 
-function attachSwarm(
-  identity: Identity,
-  get: () => AppState,
-  set: (partial: Partial<AppState>) => void,
-) {
-  swarm?.close();
-  if (swarmTimer != null) {
-    window.clearInterval(swarmTimer);
-    swarmTimer = null;
-  }
+function attachSwarm(identity: Identity, get: () => AppState, set: (partial: Partial<AppState>) => void) {
+  if (swarm) swarm.close();
   swarm = startSwarm({
-    selfHex: identity.publicKeyHex,
-    getHashes: () => get().entries.filter((e) => e.act.sigM2).map((e) => bytesToHex(e.act.hash)),
-    getAct: (hash) => get().entries.find((e) => bytesToHex(e.act.hash) === hash)?.act,
-    onAct: (act) => {
-      if (!act.sigM2) return;
-      const sigM2 = act.sigM2;
-      void (async () => {
-        try {
-          let history = get().history;
-          const hashHex = bytesToHex(act.hash);
-          if (!history.some((e) => e.kind === "act" && bytesToHex(e.wire.hash) === hashHex)) {
-            await appendHistoryEvent({ kind: "act", wire: { ...act, sigM2: null } });
-            history = [...history, { kind: "act", wire: { ...act, sigM2: null } }];
-          }
-          const m2 = appendM2(history, act.hash, sigM2);
-          if (m2.added) await appendHistoryEvent({ kind: "m2", assertion: m2.assertion });
-          if (DUAL_WRITE_LEGACY) await putAct(entryFromAct(act));
-          const contacts = upsertContactList(get().contacts, act);
-          await saveContacts(contacts);
-          set({ entries: stateToEntries(m2.state), contacts, history: m2.history });
-        } catch (err: unknown) {
-          set({ error: err instanceof Error ? err.message : "Ошибка записи журнала" });
-        }
-      })();
+    identity,
+    onPeer: (n) => set({ swarmPeers: n }),
+    onEvent: (msg) => set({ swarmEvent: msg }),
+    onAct: async (act) => {
+      const hashHex = bytesToHex(act.hash);
+      if (get().history.some((e) => e.kind === "act" && bytesToHex(e.wire.hash) === hashHex)) return;
+      await appendHistoryEvent({ kind: "act", wire: act });
+      const { deriveState } = await import("@/protocol/derive");
+      const history = [...get().history, { kind: "act" as const, wire: act }];
+      set({ history, entries: stateToEntries(deriveState(history)) });
     },
   });
-  swarmTimer = window.setInterval(() => {
-    if (!swarm) return;
-    const st = swarm.status();
-    set({ swarmPeers: st.peers, swarmEvent: st.lastEvent });
-  }, 2000);
 }
-
-export { describeAct, counterparties };
