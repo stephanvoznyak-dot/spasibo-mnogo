@@ -8,7 +8,7 @@ import {
 import { verifyAct } from "@/protocol/act";
 import { clampRemaining } from "@/protocol/graph";
 import { decodeAct, encodeAct } from "@/protocol/serialization";
-import type { Act, ActStatus, Contact, LedgerEntry } from "@/protocol/types";
+import type { ActStatus, Contact, LedgerEntry } from "@/protocol/types";
 
 const DB_NAME = "normal-project";
 /** Keep in sync with history-db.ts */
