@@ -13,8 +13,10 @@
 - npm audit: **0** уязвимостей (overrides uuid >=11.1.1).
 - Coverage (`npm run test:canon:coverage`): ~78.85% statements / 69.69% branches по модулям protocol/storage (по предыдущей проверке).
 - Документация и связи с [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и [lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants) актуальны.
-- Связь с серией ya-ryadom (Mini App аренды жилья через Telegram) отмечена как отдельный направление.
+- Связь с серией ya-ryadom (Mini App аренды жилья через Telegram) отмечена как отдельное направление.
 - CI остаётся на Node 22 для совместимости с `@capacitor/cli` и `@tanstack/react-start`.
+
+**Повторная проверка в sandbox (24.10.2026 15:20 MSK):** клонирование, `npm install --legacy-peer-deps`, typecheck — успешно, `test:canon` — 25/25 OK, lint — 0 errors / 5 warnings. Состояние стабильно.
 
 ## Приоритетный план оптимизации
 
@@ -27,7 +29,7 @@
 - [x] test:canon в CI.
 - [x] typecheck + test:canon обязательны.
 - [x] Coverage report (`c8` + `test:canon:coverage`).
-- [x] Lint: 0 errors (предупреждения сокращены до 10).
+- [x] Lint: 0 errors (предупреждения сокращены до 5).
 
 ### P1 — Документация
 - [x] README и OPTIMIZATION.md синхронизированы.
@@ -48,6 +50,7 @@
 
 - 23.10.2026: установка, typecheck, lint, test:canon 25/25, audit 0; добавлен coverage скрипт.
 - 24.10.2026: повторная проверка в sandbox — все тесты проходят; исправлены ошибки типизации (импорты, PIN-аргументы, swarm API). Lint сокращён до 5 warnings.
+- 24.10.2026 (эта сессия): подтверждение в независимом sandbox — typecheck OK, test:canon 25/25, lint 5 warnings.
 
 ## Следующие задачи (новые)
 
@@ -57,7 +60,8 @@
 4. Исследовать возможные интеграции с ya-ryadom (Telegram Mini App).
 5. Устранить оставшиеся 5 lint-предупреждений (react-refresh, exhaustive-deps).
 6. Добавить тесты для PIN-сессии и swarm-синхронизации.
+7. Анализ соответствия кода и документации в серии ya-ryadom / telegram-x-ya-ryadom.
 
 ---
 
-*Актуализировано 24 октября 2026.*
+*Актуализировано 24 октября 2026 (сандбокс-подтверждение).*
