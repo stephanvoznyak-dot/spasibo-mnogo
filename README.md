@@ -22,7 +22,7 @@
 - Канон-тесты (`npm run test:canon`) — **25/25 проходят** на Node 20 (через `tsx`). Ранее упоминавшееся требование Node 22+ для `--experimental-strip-types` больше не актуально.
 - После чистой установки с `--legacy-peer-deps` и overrides для uuid npm audit показывает 0 уязвимостей.
 
-**Последняя проверка (sandbox, 23.10.2026):** typecheck успешен, lint 0 errors / 10 warnings, test:canon 25/25 OK, audit 0 (после overrides). См. [OPTIMIZATION.md](OPTIMIZATION.md) для плана дальнейших шагов.
+**Последняя проверка (sandbox, 24.10.2026):** typecheck успешен, lint 0 errors / 10 warnings, test:canon 25/25 OK, audit 0 (после overrides). См. [OPTIMIZATION.md](OPTIMIZATION.md) для плана дальнейших шагов.
 
 ## Скачать
 
