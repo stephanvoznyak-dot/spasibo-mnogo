@@ -4,10 +4,9 @@
  */
 import { bytesToHex, hexToBytes } from "@/crypto/bytes";
 import { verifyAct } from "@/protocol/act";
-import { deriveState, historyFromActs } from "@/protocol/history";
+import { deriveState } from "@/protocol/history";
 import { decodeAct, encodeAct } from "@/protocol/serialization";
 import type {
-  Act,
   HashHex,
   History,
   HistoryEvent,
