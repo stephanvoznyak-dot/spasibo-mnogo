@@ -19,10 +19,10 @@
 - Протокол реализован: BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR-обмен.
 - Связан с нативным Android-прототипом в репозитории [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и формализациями на Lean 4 ([lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants)).
 - Typecheck (`tsc --noEmit`) проходит. Lint: 0 errors, 5 warnings (react-refresh, exhaustive-deps).
-- Канон-тесты (`npm run test:canon`) — **25/25 проходят** на Node 20 (через `tsx`).
+- Канон-тесты (`npm run test:canon`) — **25/25 проходят** на Node 20 (through `tsx`).
 - После чистой установки с `--legacy-peer-deps` и overrides для uuid npm audit показывает 0 уязвимостей.
 
-**Последняя проверка (sandbox, 25.10.2026):** typecheck успешен, lint 0 errors / 5 warnings, test:canon 25/25 OK, npm audit 0 vulnerabilities. Состояние стабильно. См. [OPTIMIZATION.md](OPTIMIZATION.md).
+**Последняя проверка (sandbox, 25.10.2026 16:30 MSK):** typecheck успешен, lint 0 errors / 5 warnings, test:canon 25/25 OK, npm audit 0 vulnerabilities. Состояние стабильно. См. [OPTIMIZATION.md](OPTIMIZATION.md).
 
 ## Скачать
 
@@ -76,6 +76,7 @@ npm run test:canon   # 25 тестов, работает на Node 20+
 - [SECURITY.md](SECURITY.md)
 - [CHANGELOG.md](CHANGELOG.md)
 - [OPTIMIZATION.md](OPTIMIZATION.md) — план оптимизации
+- [ROADMAP.md](ROADMAP.md)
 
 ## Отказ от ответственности
 
