@@ -15,7 +15,7 @@
 - Связь с серией ya-ryadom (Mini App аренды жилья через Telegram) отмечена как отдельное направление.
 - CI остаётся на Node 22 для совместимости с `@capacitor/cli` и `@tanstack/react-start`.
 
-**Подтверждение в sandbox (25.10.2026):** клонирование, `npm install --legacy-peer-deps` (0 vulnerabilities), typecheck — успешно, `test:canon` — 25/25 OK, lint — 0 errors / 5 warnings. Состояние стабильно.
+**Подтверждение в sandbox (25.10.2026, независимая проверка):** клонирование, `npm install --legacy-peer-deps`, typecheck — успешно, `test:canon` — 25/25 OK, lint — 0 errors / 5 warnings. Состояние стабильно.
 
 ## Приоритетный план оптимизации
 
@@ -51,6 +51,7 @@
 - 24.10.2026: повторная проверка в sandbox — все тесты проходят; исправлены ошибки типизации (импорты, PIN-аргументы, swarm API). Lint сокращён до 5 warnings.
 - 24.10.2026 (вечерняя сессия): независимое подтверждение в sandbox — typecheck OK, test:canon 25/25, lint 5 warnings, audit 0.
 - 25.10.2026: независимая проверка в sandbox — typecheck OK, test:canon 25/25, lint 0/5, состояние стабильно.
+- 25.10.2026 (дополнительная независимая проверка): подтверждены typecheck, 25/25 canon-тестов, lint 0 errors / 5 warnings. Для ya-ryadom подтверждены typecheck bot/web и smoke-take (7/7).
 
 ## Следующие задачи (новые)
 
@@ -65,4 +66,4 @@
 
 ---
 
-*Актуализировано 25 октября 2026 (сандбокс-подтверждение).*
+*Актуализировано 25 октября 2026 (независимое подтверждение тестов в sandbox).*
