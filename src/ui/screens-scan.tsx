@@ -11,7 +11,8 @@ import {
   openCameraStream,
 } from "./qr-tools";
 import { useApp } from "./store";
-import { Panel, usePartyName, useT } from "./screens-helpers";
+import { Panel } from "./screens-helpers";
+import { usePartyName, useT } from "./screens-hooks";
 
 export function ScanScreen() {
   const tr = useT();
