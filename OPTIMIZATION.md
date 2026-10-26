@@ -4,7 +4,7 @@
 **Репозиторий:** spasibo-mnogo (основной промышленный образец Normal Project)  
 **Версия на момент анализа:** 1.3.13
 
-## Текущее состояние (подтверждено 26.10.2026 ~15:30 MSK в sandbox)
+## Текущее состояние (подтверждено 26.10.2026 ~17:30 MSK в sandbox)
 
 - Протокол normal-project v1 реализован (BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR).
 - Typecheck (`tsc --noEmit`) проходит успешно.
@@ -15,7 +15,7 @@
 - Связь с серией ya-ryadom (Mini App аренды жилья через Telegram) отмечена как отдельное направление.
 - CI остаётся на Node 22 для совместимости с `@capacitor/cli` и `@tanstack/react-start`.
 
-**Подтверждение в sandbox (26.10.2026 ~15:30 MSK):** клонирование, `npm install --legacy-peer-deps` (с EBADENGINE для Node 22 packages, но 0 vulnerabilities), typecheck успешен, `test:canon` — 25/25 OK, lint — 0 errors / 1 warning, audit 0. Для ya-ryadom: typecheck bot/web OK, smoke-take 7/7 OK. Состояние стабильно.
+**Подтверждение в sandbox (26.10.2026 ~17:30 MSK):** клонирование, `npm install --legacy-peer-deps` (с EBADENGINE для Node 22 packages, но 0 vulnerabilities), typecheck успешен, `test:canon` — 25/25 OK, lint — 0 errors / 1 warning, audit 0. Состояние стабильно.
 
 ## Приоритетный план оптимизации
 
@@ -57,6 +57,7 @@
 - 26.10.2026 (~10:20 MSK, эта сессия): независимая проверка в sandbox — typecheck OK, test:canon 25/25, lint 0/5, audit 0. Документация актуализирована.
 - 26.10.2026 (~13:15 MSK, эта сессия): обнаружены и исправлены ошибки импорта (хуки из screens-helpers → screens-hooks). Typecheck восстановлен, test:canon 25/25, lint сокращён до 1 warning, audit 0. Документация актуализирована.
 - 26.10.2026 (~15:30 MSK, эта сессия): независимое подтверждение в sandbox — typecheck OK, test:canon 25/25, lint 0/1, audit 0. ya-ryadom typecheck + smoke 7/7 OK.
+- 26.10.2026 (~17:30 MSK, эта сессия): независимое подтверждение в sandbox — typecheck OK, test:canon 25/25, lint 0 errors / 1 warning, audit 0. Состояние стабильно.
 
 ## Следующие задачи (новые)
 
@@ -74,4 +75,4 @@
 
 ---
 
-*Актуализировано 26 октября 2026 ~15:30 MSK (независимое подтверждение тестов в sandbox для spasibo-mnogo и ya-ryadom).*
+*Актуализировано 26 октября 2026 ~17:30 MSK (независимое подтверждение тестов в sandbox).*
