@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { findCycles } from "@/protocol/clearing";
 import type { ClearingCycle } from "@/protocol/types";
 import { useApp } from "./store";
-import { Panel, usePartyName, useT } from "./screens-helpers";
+import { Panel } from "./screens-helpers";
+import { usePartyName, useT } from "./screens-hooks";
 
 export function ClearingScreen() {
   const tr = useT();
