@@ -18,11 +18,11 @@
 - Основной промышленный образец концепта Normal Project в стеке Vite + React + Capacitor.
 - Протокол реализован: BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR-обмен.
 - Связан с нативным Android-прототипом в репозитории [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и формализациями на Lean 4 ([lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants)).
-- Typecheck (`tsc --noEmit`) проходит. Lint: 0 errors, 5 warnings (react-refresh, exhaustive-deps).
+- Typecheck (`tsc --noEmit`) проходит. Lint: 0 errors, 1 warning (exhaustive-deps в screens-scan.tsx).
 - Канон-тесты (`npm run test:canon`) — **25/25 проходят** на Node 20 (through `tsx`).
 - После чистой установки с `--legacy-peer-deps` и overrides для uuid npm audit показывает 0 уязвимостей.
 
-**Последняя проверка (sandbox, 26.10.2026 ~10:20 MSK):** typecheck успешен, lint 0 errors / 5 warnings, test:canon 25/25 OK, npm audit 0 vulnerabilities. Состояние стабильно. См. [OPTIMIZATION.md](OPTIMIZATION.md).
+**Последняя проверка (sandbox, 26.10.2026 ~13:15 MSK):** typecheck успешен (исправлены импорты хуков из screens-hooks), lint 0 errors / 1 warning, test:canon 25/25 OK, npm audit 0 vulnerabilities. Состояние стабильно. См. [OPTIMIZATION.md](OPTIMIZATION.md).
 
 ## Скачать
 
