@@ -9,13 +9,13 @@
 - Протокол normal-project v1 реализован (BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR).
 - Typecheck (`tsc --noEmit`) проходит успешно.
 - Канон-тесты (`npm run test:canon`) — **25/25 проходят** на Node 20+ через `tsx`.
-- Lint (`npm run lint`): 0 ошибок, **5 предупреждений** (react-refresh/only-export-components, exhaustive-deps).
+- Lint (`npm run lint`): 0 ошибок, **1 предупреждение** (exhaustive-deps в screens-scan.tsx).
 - npm audit: **0** уязвимостей (overrides uuid >=11.1.1).
 - Документация и связи с [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и [lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants) актуальны.
 - Связь с серией ya-ryadom (Mini App аренды жилья через Telegram) отмечена как отдельное направление.
 - CI остаётся на Node 22 для совместимости с `@capacitor/cli` и `@tanstack/react-start`.
 
-**Подтверждение в sandbox (26.10.2026 ~10:20 MSK):** клонирование, `npm install --legacy-peer-deps`, typecheck — успешно, `test:canon` — 25/25 OK, lint — 0 errors / 5 warnings, audit 0. Состояние стабильно.
+**Подтверждение в sandbox (26.10.2026 ~13:15 MSK):** клонирование, `npm install --legacy-peer-deps`, typecheck — успешно после исправления импортов (useT, copyText, usePartyName из screens-hooks вместо screens-helpers), `test:canon` — 25/25 OK, lint — 0 errors / 1 warning, audit 0. Состояние стабильно.
 
 ## Приоритетный план оптимизации
 
@@ -62,7 +62,7 @@
 2. P3: синхронизация Lean-формализаций между репозиториями.
 3. P1: coverage threshold в CI + расширение ROADMAP.md.
 4. Исследовать возможные интеграции с ya-ryadom (Telegram Mini App).
-5. Устранить оставшиеся 5 lint-предупреждений (react-refresh, exhaustive-deps).
+5. Устранить оставшееся 1 lint-предупреждение (exhaustive-deps в screens-scan.tsx).
 6. Добавить тесты для PIN-сессии и swarm-синхронизации.
 7. Анализ соответствия кода и документации в серии ya-ryadom / telegram-x-ya-ryadom.
 8. Обновить README во всех связанных репозиториях с актуальной датой проверки и перекрёстными ссылками.
@@ -72,3 +72,10 @@
 ---
 
 *Актуализировано 26 октября 2026 ~10:20 MSK (независимое подтверждение тестов в sandbox).*
+- 26.10.2026 (~13:15 MSK, эта сессия): обнаружены и исправлены ошибки импорта (хуки из screens-helpers → screens-hooks). Typecheck восстановлен, test:canon 25/25, lint сокращён до 1 warning, audit 0. Документация актуализирована.
+
+### Дополнительно выполнено 26.10.2026
+- Исправлены сломанные импорты UI-хуков, восстановлен typecheck.
+- Lint сокращён с 5 до 1 предупреждения.
+
+*Актуализировано 26 октября 2026 ~13:15 MSK (исправление импортов и подтверждение тестов в sandbox).*
