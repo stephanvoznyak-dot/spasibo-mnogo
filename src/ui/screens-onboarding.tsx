@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { isValidMnemonic, normalizeMnemonic, type WordCount } from "@/crypto/bip39";
 import { APP_PRODUCT } from "@/version";
 import { useApp, type Identity } from "./store";
-import { Field, useT } from "./screens-helpers";
+import { Field } from "./screens-helpers";
+import { useT } from "./screens-hooks";
 import { DownloadButtons, DownloadPanel } from "./downloads";
 
 export function BootScreen() {
