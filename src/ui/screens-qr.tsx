@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { qrSvgDataUrl } from "./qr-tools";
 import { useApp } from "./store";
-import { useT } from "./screens-helpers";
+import { useT } from "./screens-hooks";
 
 export function QrScreen() {
   const tr = useT();
