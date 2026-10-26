@@ -5,7 +5,7 @@ import { GuideScreen } from "./guide-screens";
 import { LabScreen } from "./lab-screen";
 import { type MsgKey } from "./i18n";
 import { useApp, type Screen } from "./store";
-import { useT } from "./screens-helpers";
+import { useT } from "./screens-hooks";
 import { BootScreen, Onboarding } from "./screens-onboarding";
 import { HomeScreen } from "./screens-home";
 import { CreateScreen } from "./screens-create";
