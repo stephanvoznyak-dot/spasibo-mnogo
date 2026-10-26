@@ -1,6 +1,7 @@
 import { bytesToHex } from "@/crypto/bytes";
 import { useApp } from "./store";
-import { Panel, usePartyName, useT } from "./screens-helpers";
+import { Panel } from "./screens-helpers";
+import { usePartyName, useT } from "./screens-hooks";
 
 export function LedgerScreen() {
   const tr = useT();
