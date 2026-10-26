@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { encodeQrMessage } from "@/protocol/qr-messages";
 import { useApp } from "./store";
-import { Field, useT } from "./screens-helpers";
+import { Field } from "./screens-helpers";
+import { useT } from "./screens-hooks";
 
 export function CreateScreen() {
   const tr = useT();
