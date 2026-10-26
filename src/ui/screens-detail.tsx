@@ -3,7 +3,8 @@ import { bytesToHex } from "@/crypto/bytes";
 import { encodeQrMessage } from "@/protocol/qr-messages";
 import { describeAct } from "@/protocol/act";
 import { useApp } from "./store";
-import { Mono, Panel, usePartyName, useT } from "./screens-helpers";
+import { Mono, Panel } from "./screens-helpers";
+import { usePartyName, useT } from "./screens-hooks";
 
 export function DetailScreen() {
   const tr = useT();
