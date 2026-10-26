@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { APP_VERSION } from "@/version";
 import { counterparties } from "@/protocol/graph";
 import { useApp } from "./store";
-import { Mono, Panel, copyText, usePartyName, useT } from "./screens-helpers";
+import { Mono, Panel } from "./screens-helpers";
+import { copyText, usePartyName, useT } from "./screens-hooks";
 import { DownloadPanel } from "./downloads";
 
 export function HomeScreen() {
