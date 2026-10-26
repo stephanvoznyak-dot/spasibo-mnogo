@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { bytesEqual, bytesToHex } from "@/crypto/bytes";
@@ -31,7 +31,7 @@ export function ScanScreen() {
   const lastRaw = useRef("");
   const lastAt = useRef(0);
 
-  async function handleRaw(value: string) {
+  const handleRaw = useCallback(async (value: string) => {
     const now = Date.now();
     if (value === lastRaw.current && now - lastAt.current < 2500) return;
     lastRaw.current = value;
@@ -46,7 +46,7 @@ export function ScanScreen() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка QR");
     }
-  }
+  }, [ingest, setPending, setMsg, tr, setError]);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -78,7 +78,7 @@ export function ScanScreen() {
       if (timer != null) window.clearTimeout(timer);
       stream?.getTracks().forEach((t) => t.stop());
     };
-  }, [camKey]);
+  }, [camKey, handleRaw, tr]);
 
   return (
     <div className="flex flex-col gap-4">
