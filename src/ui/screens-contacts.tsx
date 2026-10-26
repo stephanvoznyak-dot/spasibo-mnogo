@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useApp } from "./store";
-import { Field, Panel, copyText, useT } from "./screens-helpers";
+import { Field, Panel } from "./screens-helpers";
+import { copyText, useT } from "./screens-hooks";
 
 export function ContactsScreen() {
   const tr = useT();
