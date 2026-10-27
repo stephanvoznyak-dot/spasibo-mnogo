@@ -22,7 +22,7 @@
 - Канон-тесты (`npm run test:canon`) — **25/25 проходят** на Node 20 (through `tsx`).
 - После чистой установки с `--legacy-peer-deps` и overrides для uuid npm audit показывает 0 уязвимостей.
 
-**Последняя проверка (sandbox, 27.10.2026 ~16:28 MSK):** typecheck успешен, lint 0/0, test:canon 25/25 OK, npm audit 0. Состояние стабильно. См. [OPTIMIZATION.md](OPTIMIZATION.md).
+**Последняя проверка (sandbox, 27.10.2026 ~17:25 MSK):** typecheck успешен, lint 0/0, test:canon 25/25 OK. Состояние стабильно. См. [OPTIMIZATION.md](OPTIMIZATION.md).
 
 ## Скачать
 
