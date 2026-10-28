@@ -5,8 +5,7 @@ import { Input } from "@/components/ui/input";
 import { isValidMnemonic, normalizeMnemonic, type WordCount } from "@/crypto/bip39";
 import { APP_PRODUCT } from "@/version";
 import { useApp, type Identity } from "./store";
-import { Field } from "./screens-helpers";
-import { useT } from "./screens-hooks";
+import { Field, useT } from "./screens-helpers";
 import { DownloadButtons, DownloadPanel } from "./downloads";
 
 export function BootScreen() {
@@ -93,7 +92,7 @@ export function Onboarding() {
           </button>
         </div>
         {downloadsOpen && (
-          <div className="absolute right-0 top-full z-20 mt-2 w-[min(18rem,calc(100vw-2.5rem))] rounded-lg border border-border bg-surface p-3 shadow-lg">
+          <div className="absolute right-0 top-full z-20 mt-2 max-h-[70dvh] w-[min(18rem,calc(100vw-2.5rem))] overflow-y-auto rounded-lg border border-border bg-surface p-3 shadow-lg">
             <DownloadButtons lang={lang} />
           </div>
         )}

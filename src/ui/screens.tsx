@@ -5,7 +5,7 @@ import { GuideScreen } from "./guide-screens";
 import { LabScreen } from "./lab-screen";
 import { type MsgKey } from "./i18n";
 import { useApp, type Screen } from "./store";
-import { useT } from "./screens-hooks";
+import { useT } from "./screens-helpers";
 import { BootScreen, Onboarding } from "./screens-onboarding";
 import { HomeScreen } from "./screens-home";
 import { CreateScreen } from "./screens-create";
@@ -58,8 +58,7 @@ export function Shell() {
           </button>
         </div>
         {downloadsOpen && (
-          <div className="absolute right-3 top-full z-20 mt-2 w-[min(18rem,calc(100vw-1.5rem))] rounded-lg border border-border bg-surface p-3 shadow-lg">
-            <p className="mb-2 text-xs text-muted">{tr("downloadHint")}</p>
+          <div className="absolute right-3 top-full z-20 mt-2 max-h-[70dvh] w-[min(18rem,calc(100vw-1.5rem))] overflow-y-auto rounded-lg border border-border bg-surface p-3 shadow-lg">
             <DownloadButtons />
           </div>
         )}

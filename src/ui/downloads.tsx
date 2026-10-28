@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Download, FileArchive, FileCode2, Smartphone, X } from "lucide-react";
 import { t, type Lang } from "./i18n";
 import { useApp } from "./store";
@@ -51,32 +50,14 @@ const FILES: FileSpec[] = [
   },
 ];
 
-function openOutside(url: string) {
-  const opened = window.open(url, "_blank", "noopener,noreferrer");
-  return Boolean(opened);
-}
-
 export function DownloadButtons({ lang, compact = false }: { lang?: Lang; compact?: boolean }) {
   const storeLang = useApp((s) => s.settings.lang);
   const resolved = lang ?? storeLang;
-  const [note, setNote] = useState<string | null>(null);
-
-  function save(event: { preventDefault: () => void }, file: FileSpec) {
-    event.preventDefault();
-    const local = new URL(file.local, window.location.href).href;
-    if (openOutside(local) || openOutside(file.remote)) {
-      setNote(t(resolved, "downloadStarted"));
-      return;
-    }
-    void navigator.clipboard.writeText(file.remote).then(
-      () => setNote(t(resolved, "downloadCopied")),
-      () => setNote(t(resolved, "downloadCopyFail")),
-    );
-  }
+  const html = FILES[0];
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-[13px] leading-snug text-muted">{note ?? t(resolved, "downloadHint")}</p>
+      <p className="text-[13px] leading-snug text-muted">{t(resolved, "downloadHint")}</p>
       {FILES.map((file) => {
         const Icon = file.icon;
         return (
@@ -84,30 +65,35 @@ export function DownloadButtons({ lang, compact = false }: { lang?: Lang; compac
             key={file.name}
             href={file.local}
             download={file.name}
-            target="_blank"
-            rel="noopener noreferrer"
             className={
               file.primary
                 ? "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md bg-accent px-4 text-center text-sm font-medium text-accent-fg"
                 : "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border border-border px-4 text-center text-sm"
             }
-            onClick={(event) => save(event, file)}
           >
             <Icon className="size-4 shrink-0" /> {t(resolved, file.key)}
           </a>
         );
       })}
+      <label className="flex flex-col gap-1 text-[11px] leading-snug text-muted">
+        {t(resolved, "downloadSafari")}
+        <input
+          readOnly
+          value={html.remote}
+          aria-label={t(resolved, "downloadSafari")}
+          className="w-full rounded-md border border-border bg-bg px-2 py-2 font-mono text-[11px] text-fg"
+          onFocus={(event) => event.currentTarget.select()}
+        />
+      </label>
       <p className="text-[11px] leading-snug text-muted">{t(resolved, "downloadDebug")}</p>
-      {!compact && (
-        <a
-          href={RELEASES_PAGE}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-md px-4 text-xs text-muted underline"
-        >
-          {t(resolved, "releases")} · GitHub
-        </a>
-      )}
+      <a
+        href={RELEASES_PAGE}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-md px-4 text-xs text-muted underline"
+      >
+        {t(resolved, "releases")} · GitHub
+      </a>
       {!compact && (
         <a
           href={REPO_PAGE}
