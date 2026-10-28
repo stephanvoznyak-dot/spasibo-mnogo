@@ -20,9 +20,9 @@
 - Связан с нативным Android-прототипом в репозитории [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и формализациями на Lean 4 ([lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants)).
 - Typecheck (`tsc --noEmit`) проходит. Lint: **0 errors, 0 warnings**.
 - Канон-тесты (`npm run test:canon`) — **25/25 проходят** на Node 20 (through `tsx`).
-- После чистой установки с `--legacy-peer-deps` обнаружены уязвимости в `better-auth` (1 critical, 2 low). Требуется обновление зависимости.
+- Уязвимости в better-auth закрыты обновлением до 1.7.14 (0 vulnerabilities).
 
-**Последняя проверка (sandbox, 28.10.2026 ~09:15 MSK):** typecheck успешен, lint 0/0, test:canon 25/25 OK. Состояние стабильно, за исключением новых уязвимостей в better-auth. См. [OPTIMIZATION.md](OPTIMIZATION.md).
+**Последняя проверка (sandbox, 28.10.2026 ~10:20 MSK):** typecheck успешен, lint 0/0, test:canon 25/25 OK, npm audit 0 vulnerabilities (better-auth обновлён до 1.7.14). Состояние стабильно. См. [OPTIMIZATION.md](OPTIMIZATION.md).
 
 ## Скачать
 

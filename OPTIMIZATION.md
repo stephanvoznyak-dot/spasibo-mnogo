@@ -10,7 +10,7 @@
 - Typecheck (`tsc --noEmit`) проходит успешно.
 - Канон-тесты (`npm run test:canon`) — **25/25 проходят** на Node 20+ через `tsx`.
 - Lint (`npm run lint`): **0 ошибок, 0 предупреждений**.
-- npm audit: **3 уязвимости** (1 critical, 2 low) в better-auth / @better-auth/* (GHSA-44jh-23m7-hpcf). Требуется обновление до better-auth@1.7.14+.
+- npm audit: **0 vulnerabilities** (better-auth обновлён до 1.7.14, GHSA-44jh-23m7-hpcf закрыта).
 - Документация и связи с [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и [lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants) актуальны.
 - Связь с серией ya-ryadom (Mini App аренды жилья через Telegram) отмечена как отдельное направление.
 - CI остаётся на Node 22 для совместимости с `@capacitor/cli` и `@tanstack/react-start`.
@@ -23,7 +23,7 @@
 - [x] Audit после чистой установки.
 - [x] Overrides для uuid и peer-deps.
 - [x] Audit в GitHub Actions.
-- [ ] Обновить better-auth до версии, закрывающей GHSA-44jh-23m7-hpcf (1.7.14+).
+- [x] Обновить better-auth до версии, закрывающей GHSA-44jh-23m7-hpcf (1.7.14).
 
 ### P1 — CI и тесты
 - [x] test:canon в CI.
@@ -68,10 +68,11 @@
 - 27.10.2026 (~16:28 MSK, эта сессия): независимое подтверждение в sandbox — typecheck OK, test:canon 25/25, lint 0/0, audit 0. Документация актуализирована. Состояние стабильно.
 - 27.10.2026 (~17:25 MSK, эта сессия): независимое подтверждение в sandbox — typecheck OK, test:canon 25/25, lint 0/0. Для ya-ryadom подтверждены typecheck bot/web и smoke-take (7/7). Документация актуализирована. Состояние стабильно.
 - 28.10.2026 (~09:15 MSK, эта сессия): независимое подтверждение в sandbox — typecheck OK, test:canon 25/25, lint 0/0. Обнаружены новые уязвимости в better-auth (1 critical). Документация актуализирована.
+- 28.10.2026 (~10:20 MSK, эта сессия): better-auth обновлён до 1.7.14 (адаптация client/popup API), typecheck OK, test:canon 25/25, lint 0/0, npm audit 0. Документация актуализирована.
 
 ## Следующие задачи (новые / продолжение)
 
-1. **P0**: Обновить better-auth до версии ≥1.7.14 для закрытия critical уязвимости GHSA-44jh-23m7-hpcf.
+1. **P0**: better-auth обновлён до 1.7.14 — уязвимость закрыта.
 2. P2: размер APK и ProGuard/R8 + ревью swarm (после адаптации API).
 3. P3: синхронизация Lean-формализаций между репозиториями (spasibo-mnogo/lean и lean4-token-units-invariants).
 4. P1: coverage threshold в CI + расширение ROADMAP.md.
@@ -85,4 +86,4 @@
 
 ---
 
-*Актуализировано 28 октября 2026 ~09:15 MSK (подтверждение стабильного состояния, выявление уязвимости better-auth и обновление документации в sandbox).*
+*Актуализировано 28 октября 2026 ~10:20 MSK (обновление better-auth до 1.7.14, закрытие уязвимости, typecheck/lint/test:canon 25/25 OK, audit 0).*
