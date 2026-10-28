@@ -4,7 +4,7 @@
 **Репозиторий:** spasibo-mnogo (основной промышленный образец Normal Project)  
 **Версия на момент анализа:** 1.3.13
 
-## Текущее состояние (подтверждено 28.10.2026 ~09:15 MSK в sandbox)
+## Текущее состояние (подтверждено 28.10.2026 ~11:15 MSK в sandbox)
 
 - Протокол normal-project v1 реализован (BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR).
 - Typecheck (`tsc --noEmit`) проходит успешно.
@@ -15,7 +15,7 @@
 - Связь с серией ya-ryadom (Mini App аренды жилья через Telegram) отмечена как отдельное направление.
 - CI остаётся на Node 22 для совместимости с `@capacitor/cli` и `@tanstack/react-start`.
 
-**Подтверждение в sandbox (28.10.2026 ~09:15 MSK):** клонирование, `npm install --legacy-peer-deps`, typecheck успешен, `test:canon` — 25/25 OK, lint — 0 errors / 0 warnings. Состояние стабильно, кроме новой уязвимости в better-auth.
+**Подтверждение в sandbox (28.10.2026 ~11:15 MSK):** клонирование, `npm install --legacy-peer-deps`, typecheck успешен, `test:canon` — 25/25 OK, lint — 0 errors / 0 warnings, audit 0. Состояние стабильно.
 
 ## Приоритетный план оптимизации
 
@@ -69,6 +69,7 @@
 - 27.10.2026 (~17:25 MSK, эта сессия): независимое подтверждение в sandbox — typecheck OK, test:canon 25/25, lint 0/0. Для ya-ryadom подтверждены typecheck bot/web и smoke-take (7/7). Документация актуализирована. Состояние стабильно.
 - 28.10.2026 (~09:15 MSK, эта сессия): независимое подтверждение в sandbox — typecheck OK, test:canon 25/25, lint 0/0. Обнаружены новые уязвимости в better-auth (1 critical). Документация актуализирована.
 - 28.10.2026 (~10:20 MSK, эта сессия): better-auth обновлён до 1.7.14 (адаптация client/popup API), typecheck OK, test:canon 25/25, lint 0/0, npm audit 0. Документация актуализирована.
+- 28.10.2026 (~11:15 MSK, эта сессия): независимое подтверждение в sandbox — typecheck OK, test:canon 25/25, lint 0/0, audit 0. Для ya-ryadom подтверждены typecheck и smoke-take (7/7). Документация актуализирована. Состояние стабильно.
 
 ## Следующие задачи (новые / продолжение)
 
@@ -86,4 +87,4 @@
 
 ---
 
-*Актуализировано 28 октября 2026 ~10:20 MSK (обновление better-auth до 1.7.14, закрытие уязвимости, typecheck/lint/test:canon 25/25 OK, audit 0).*
+*Актуализировано 28 октября 2026 ~11:15 MSK (typecheck/lint/test:canon 25/25 OK, audit 0; ya-ryadom smoke 7/7 OK).*
