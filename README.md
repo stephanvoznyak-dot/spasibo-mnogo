@@ -18,8 +18,11 @@
 - Основной промышленный образец концепта Normal Project в стеке Vite + React + Capacitor.
 - Протокол реализован: BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR-обмен.
 - Связан с нативным Android-прототипом в репозитории [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и формализациями на Lean 4 ([lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants)).
-- Тесты протокола (`npm run test:canon`) требуют **Node.js 22+** из-за `--experimental-strip-types`. Typecheck (`tsc --noEmit`) проходит.
-- После чистой установки с `--legacy-peer-deps` npm audit показывает 3 moderate уязвимости (основные high-уровня исправлены или обойдены). Рекомендуется периодически проверять зависимости. Lint errors исправлены.
+- Typecheck (`tsc --noEmit`) проходит. Lint: **0 errors, 0 warnings**.
+- Канон-тесты (`npm run test:canon`) — **25/25 проходят** на Node 20 (through `tsx`).
+- Уязвимости в better-auth закрыты обновлением до 1.7.14 (0 vulnerabilities).
+
+**Последняя проверка (sandbox, 28.10.2026 ~12:15 MSK):** typecheck успешен, lint 0/0, test:canon 25/25 OK, npm audit 0 vulnerabilities. Состояние стабильно. См. [OPTIMIZATION.md](OPTIMIZATION.md).
 
 ## Скачать
 
@@ -57,7 +60,7 @@ State = deriveState(History)
 npm install --legacy-peer-deps
 npm run restore:store
 npm run dev
-npm run test:canon   # требует Node 22+
+npm run test:canon   # 25 тестов, работает на Node 20+
 ```
 
 ## Сборки
@@ -73,6 +76,7 @@ npm run test:canon   # требует Node 22+
 - [SECURITY.md](SECURITY.md)
 - [CHANGELOG.md](CHANGELOG.md)
 - [OPTIMIZATION.md](OPTIMIZATION.md) — план оптимизации
+- [ROADMAP.md](ROADMAP.md)
 
 ## Отказ от ответственности
 
