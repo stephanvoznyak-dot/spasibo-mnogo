@@ -126,6 +126,12 @@ export function DownloadButtons({ lang, compact = false }: { lang?: Lang; compac
               onClick={(event) => {
                 if (!previewBlocksSave()) return;
                 event.preventDefault();
+                const opened = window.open(file.remote, "_blank");
+                if (opened) {
+                  opened.opener = null;
+                  setNote(t(resolved, "downloadStarted"));
+                  return;
+                }
                 void handoff(file);
               }}
             >

@@ -76,10 +76,10 @@ const dict = {
     downloadZip: "Скачать исходники",
     downloadIos: "Проект Xcode",
     downloadHint:
-      "В этом окне iPhone файл сам не сохраняет. Нажмите кнопку — откроется «Поделиться» или скопируется ссылка. Вставьте её в Safari. Журнал HTML — для iPhone. APK ставится только на Android.",
+      "На iPhone нажатие открывает файл в новом окне — сохраните его оттуда. Если окно не появилось, ссылка копируется: вставьте её в Safari. Журнал HTML — для iPhone. APK ставится только на Android.",
     downloadDebug:
       "APK с debug-подписью, не для Google Play. На Android разрешите установку из неизвестных источников. iPhone этот файл не ставит — для iPhone нужен журнал HTML.",
-    downloadStarted: "Загрузка началась.",
+    downloadStarted: "Файл открыт в новом окне. Сохраните его. Если окно пустое — нажмите значок копирования и откройте ссылку в Safari.",
     downloadBlocked: "Окно предпросмотра не сохраняет файл. Скопируйте ссылку и откройте её в Safari.",
     downloadTapAgain: "Файл готов. Нажмите кнопку ещё раз и выберите «Сохранить в Файлы».",
     downloadSaved: "Выберите «Скопировать» или Safari в листе «Поделиться».",
@@ -216,10 +216,10 @@ const dict = {
     downloadZip: "Download sources",
     downloadIos: "Xcode project",
     downloadHint:
-      "This window cannot save the file on iPhone. Tap a button to share or copy the link, then open it in Safari. The HTML journal is for iPhone. The APK installs only on Android.",
+      "On iPhone a tap opens the file in a new window — save it there. If no window appears, the link is copied: paste it into Safari. The HTML journal is for iPhone. The APK installs only on Android.",
     downloadDebug:
       "The APK is debug-signed, not for Google Play. Android must allow unknown sources. iPhone cannot install it — use the HTML journal.",
-    downloadStarted: "Download started.",
+    downloadStarted: "File opened in a new window. Save it there. If the window is blank, tap the copy icon and open the link in Safari.",
     downloadBlocked: "This preview cannot save the file. Copy the link and open it in Safari.",
     downloadTapAgain: "File is ready. Tap the button again and choose Save to Files.",
     downloadSaved: "Choose Copy or Safari in the share sheet.",
