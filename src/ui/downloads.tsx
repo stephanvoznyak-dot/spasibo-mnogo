@@ -1,4 +1,5 @@
-import { Download, FileArchive, FileCode2, Smartphone, X } from "lucide-react";
+import { useState } from "react";
+import { Copy, Download, FileArchive, FileCode2, Smartphone, X } from "lucide-react";
 import { t, type Lang } from "./i18n";
 import { useApp } from "./store";
 import { Panel } from "./screens-helpers";
@@ -50,10 +51,62 @@ const FILES: FileSpec[] = [
   },
 ];
 
+function previewBlocksSave(): boolean {
+  if (typeof window === "undefined") return false;
+  const ua = navigator.userAgent;
+  const ios = /iPhone|iPad|iPod/i.test(ua);
+  let framed = false;
+  try {
+    framed = window.parent !== window;
+  } catch {
+    framed = true;
+  }
+  return ios || framed;
+}
+
+async function copyText(value: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(value);
+    return true;
+  } catch {
+    try {
+      const area = document.createElement("textarea");
+      area.value = value;
+      area.setAttribute("readonly", "");
+      area.style.position = "fixed";
+      area.style.left = "-9999px";
+      document.body.appendChild(area);
+      area.select();
+      const ok = document.execCommand("copy");
+      area.remove();
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+}
+
 export function DownloadButtons({ lang, compact = false }: { lang?: Lang; compact?: boolean }) {
   const storeLang = useApp((s) => s.settings.lang);
   const resolved = lang ?? storeLang;
   const html = FILES[0];
+  const [note, setNote] = useState<string | null>(null);
+
+  async function handoff(file: FileSpec) {
+    const url = file.remote;
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: file.name, text: t(resolved, file.key), url });
+        setNote(t(resolved, "downloadSaved"));
+        return;
+      } catch (error) {
+        const name = error && typeof error === "object" && "name" in error ? String((error as { name: unknown }).name) : "";
+        if (name === "AbortError") return;
+      }
+    }
+    const copied = await copyText(url);
+    setNote(copied ? t(resolved, "downloadCopied") : t(resolved, "downloadCopyFail"));
+  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -61,20 +114,39 @@ export function DownloadButtons({ lang, compact = false }: { lang?: Lang; compac
       {FILES.map((file) => {
         const Icon = file.icon;
         return (
-          <a
-            key={file.name}
-            href={file.local}
-            download={file.name}
-            className={
-              file.primary
-                ? "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md bg-accent px-4 text-center text-sm font-medium text-accent-fg"
-                : "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border border-border px-4 text-center text-sm"
-            }
-          >
-            <Icon className="size-4 shrink-0" /> {t(resolved, file.key)}
-          </a>
+          <div key={file.name} className="flex gap-2">
+            <a
+              href={file.local}
+              download={file.name}
+              className={
+                file.primary
+                  ? "inline-flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-md bg-accent px-3 text-center text-sm font-medium text-accent-fg"
+                  : "inline-flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border border-border px-3 text-center text-sm"
+              }
+              onClick={(event) => {
+                if (!previewBlocksSave()) return;
+                event.preventDefault();
+                void handoff(file);
+              }}
+            >
+              <Icon className="size-4 shrink-0" /> {t(resolved, file.key)}
+            </a>
+            <button
+              type="button"
+              className="inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-md border border-border"
+              aria-label={t(resolved, "downloadSafari")}
+              onClick={() => {
+                void copyText(file.remote).then((copied) => {
+                  setNote(copied ? t(resolved, "downloadCopied") : t(resolved, "downloadCopyFail"));
+                });
+              }}
+            >
+              <Copy className="size-4" />
+            </button>
+          </div>
         );
       })}
+      {note && <p className="text-[13px] leading-snug text-fg">{note}</p>}
       <label className="flex flex-col gap-1 text-[11px] leading-snug text-muted">
         {t(resolved, "downloadSafari")}
         <input

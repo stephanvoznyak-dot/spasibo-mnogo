@@ -76,7 +76,7 @@ const dict = {
     downloadZip: "Скачать исходники",
     downloadIos: "Проект Xcode",
     downloadHint:
-      "Нажатие сохраняет файл на это устройство. Журнал HTML — для iPhone. APK ставится только на Android.",
+      "В этом окне iPhone файл сам не сохраняет. Нажмите кнопку — откроется «Поделиться» или скопируется ссылка. Вставьте её в Safari. Журнал HTML — для iPhone. APK ставится только на Android.",
     downloadDebug:
       "APK с debug-подписью, не для Google Play. На Android разрешите установку из неизвестных источников. iPhone этот файл не ставит — для iPhone нужен журнал HTML.",
     downloadStarted: "Загрузка началась.",
@@ -216,7 +216,7 @@ const dict = {
     downloadZip: "Download sources",
     downloadIos: "Xcode project",
     downloadHint:
-      "A tap saves the file on this device. The HTML journal is for iPhone. The APK installs only on Android.",
+      "This window cannot save the file on iPhone. Tap a button to share or copy the link, then open it in Safari. The HTML journal is for iPhone. The APK installs only on Android.",
     downloadDebug:
       "The APK is debug-signed, not for Google Play. Android must allow unknown sources. iPhone cannot install it — use the HTML journal.",
     downloadStarted: "Download started.",
