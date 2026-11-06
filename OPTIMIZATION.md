@@ -4,18 +4,18 @@
 **Репозиторий:** spasibo-mnogo (основной промышленный образец Normal Project)  
 **Версия на момент анализа:** 1.3.13 (текущая 1.3.16)
 
-## Текущее состояние (подтверждено 6 ноября 2026 ~10:30 MSK в sandbox)
+## Текущее состояние (подтверждено 6 ноября 2026 ~11:25 MSK в sandbox)
 
 - Протокол normal-project v1 реализован (BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR).
 - Typecheck (`tsc --noEmit`) проходит успешно.
 - Канон-тесты (`npm run test:canon`) — **25/25 проходят** на Node 20+ через `tsx`.
 - Lint (`npm run lint`): **0 ошибок, 0 предупреждений**.
-- npm audit: 12 moderate-уязвимостей в цепочке glob/minimatch (dev-dependencies, инструменты сборки/ESLint/c8). better-auth 1.7.14 — критическая уязвимость закрыта. Рекомендуется `npm audit fix`.
+- npm audit: **10 moderate** уязвимостей в цепочке glob/minimatch (dev-dependencies, инструменты сборки/ESLint/c8). Частично исправлено через `npm audit fix` (было 12). better-auth 1.7.14 — критическая уязвимость закрыта. Остаток требует `--force` (breaking для c8).
 - Документация и связи с [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и [lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants) актуальны.
 - Связь с серией ya-ryadom (Mini App аренды жилья через Telegram) отмечена как отдельное направление.
 - CI остаётся на Node 22 для совместимости с `@capacitor/cli` и `@tanstack/react-start`.
 
-**Подтверждение в sandbox (6.11.2026 ~10:30 MSK):** клонирование, `npm install --legacy-peer-deps`, typecheck успешен, `test:canon` — 25/25 OK, lint — 0/0. Состояние стабильно.
+**Подтверждение в sandbox (6.11.2026 ~11:25 MSK):** клонирование, `npm install --legacy-peer-deps`, `npm audit fix`, typecheck успешен, `test:canon` — 25/25 OK, lint — 0/0. package-lock обновлён и запушен. Состояние стабильно.
 
 ## Приоритетный план оптимизации
 
@@ -24,7 +24,7 @@
 - [x] Overrides для uuid и peer-deps.
 - [x] Audit в GitHub Actions.
 - [x] Обновить better-auth до версии, закрывающей GHSA-44jh-23m7-hpcf (1.7.14).
-- [ ] Закрыть moderate-уязвимости glob/minimatch (`npm audit fix`).
+- [x] Частично закрыть moderate-уязвимости glob/minimatch (`npm audit fix` — 12→10).
 
 ### P1 — CI и тесты
 - [x] test:canon в CI.
@@ -70,4 +70,4 @@
 
 ---
 
-*Актуализировано 6 ноября 2026 ~10:30 MSK (typecheck/lint/test:canon 25/25 OK; audit с moderate в dev-deps).*
+*Актуализировано 6 ноября 2026 ~11:25 MSK (typecheck/lint/test:canon 25/25 OK; npm audit fix 12→10 moderate в dev-deps; lockfile обновлён).*
