@@ -70,4 +70,4 @@
 
 ---
 
-*Актуализировано 6 ноября 2026 ~11:25 MSK (typecheck/lint/test:canon 25/25 OK; npm audit fix 12→10 moderate в dev-deps; lockfile обновлён).*
+*Актуализировано 6 ноября 2026 ~15:23 MSK (typecheck/lint/test:canon 25/25 OK; npm audit fix 12→10 moderate в dev-deps; lockfile обновлён).*
