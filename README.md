@@ -20,9 +20,9 @@
 - Связан с нативным Android-прототипом в репозитории [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и формализациями на Lean 4 ([lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants)).
 - Typecheck (`tsc --noEmit`) проходит. Lint: **0 errors, 0 warnings**.
 - Канон-тесты (`npm run test:canon`) — **25/25 проходят** на Node 20 (through `tsx`).
-- Уязвимости в better-auth закрыты обновлением до 1.7.14 (0 vulnerabilities).
+- Уязвимости в better-auth закрыты обновлением до 1.7.14. В зависимостях сборки присутствуют moderate-уязвимости в glob/minimatch (в основном dev-deps); рекомендуется `npm audit fix`.
 
-**Последняя проверка (sandbox, 28.10.2026 ~12:15 MSK):** typecheck успешен, lint 0/0, test:canon 25/25 OK, npm audit 0 vulnerabilities. Состояние стабильно. См. [OPTIMIZATION.md](OPTIMIZATION.md).
+**Последняя проверка (sandbox, 6 ноября 2026 ~10:30 MSK):** typecheck успешен, lint 0/0, test:canon 25/25 OK. npm audit показывает 12 moderate уязвимостей (в основном в инструментах сборки). Состояние стабильно. См. [OPTIMIZATION.md](OPTIMIZATION.md).
 
 ## Скачать
 
