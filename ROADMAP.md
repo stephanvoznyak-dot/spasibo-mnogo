@@ -10,10 +10,10 @@
 - Typecheck + 25/25 canon-тестов, lint 0 errors
 - Документация и связи с NormalProject / Lean формализациями
 
-## В работе / приоритеты (24.10.2026)
+## В работе / приоритеты (7.11.2026)
 
 - [ ] Coverage threshold в CI
-- [ ] Устранение 5 lint-предупреждений (react-refresh, exhaustive-deps)
+- [x] Устранение lint-предупреждений (сейчас 0/0)
 - [ ] Тесты для PIN-сессии и swarm-синхронизации
 - [ ] Оптимизация размера APK (ProGuard/R8)
 - [ ] Ревью offline-first / swarm
