@@ -10,15 +10,18 @@
 - Typecheck + 25/25 canon-тестов, lint 0 errors
 - Документация и связи с NormalProject / Lean формализациями
 
-## В работе / приоритеты (24.10.2026)
+## В работе / приоритеты (7.11.2026)
 
-- [ ] Coverage threshold в CI
-- [ ] Устранение 5 lint-предупреждений (react-refresh, exhaustive-deps)
+- [x] Coverage threshold в CI (добавлен порог ~70%)
+- [ ] Устранение остаточных lint-предупреждений (если появятся)
 - [ ] Тесты для PIN-сессии и swarm-синхронизации
 - [ ] Оптимизация размера APK (ProGuard/R8)
 - [ ] Ревью offline-first / swarm
 - [ ] Синхронизация Lean-формализаций с lean4-token-units-invariants
 - [ ] Анализ соответствия серии ya-ryadom
+- [ ] Закрытие moderate-уязвимостей в dev-deps (glob/minimatch)
+- [ ] Dependabot для зависимостей
+- [ ] Дополнительные unit-тесты для edge-cases клиринга/QR
 
 ## Отложено
 
