@@ -22,7 +22,7 @@
 - Канон-тесты (`npm run test:canon`) — **25/25 проходят** на Node 20 (through `tsx`).
 - Уязвимости в better-auth закрыты обновлением до 1.7.14. В зависимостях сборки присутствуют moderate-уязвимости в glob/minimatch (в основном dev-deps); рекомендуется `npm audit fix`.
 
-**Последняя проверка (sandbox, 7 ноября 2026 ~09:20 MSK):** typecheck успешен, lint 0/0, test:canon 25/25 OK. Состояние стабильно. См. [OPTIMIZATION.md](OPTIMIZATION.md).
+**Последняя проверка (sandbox, 7 ноября 2026 ~12:25 MSK):** typecheck успешен, lint 0/0, test:canon 25/25 OK. Состояние стабильно. См. [OPTIMIZATION.md](OPTIMIZATION.md).
 
 ## Скачать
 
