@@ -1,12 +1,13 @@
 # OPTIMIZATION.md
 
-## Текущий статус (8 ноября 2026 ~12:20 MSK)
+## Текущий статус (8 ноября 2026 ~13:20 MSK)
 
 Проект стабилен и прошёл полную проверку в изолированном окружении:
 
 - Typecheck (`tsc --noEmit`) — **успешно**.
 - Lint (`eslint .`) — **0 errors, 0 warnings**.
 - Канон-тесты (`npm run test:canon`) — **25/25 проходят**.
+- Coverage (protocol/storage): **~79% statements / 70% branches**. Threshold enforced in CI.
 - Уязвимости в `better-auth` закрыты (версия ≥ 1.7.14).
 - Moderate-уязвимости в `glob` / `minimatch` (в основном транзитивные dev-зависимости). Рекомендуется периодический `npm audit fix`.
 
@@ -16,7 +17,7 @@
 
 ### Высокий приоритет
 
-- [ ] Добавить coverage threshold в CI (`.github/workflows/ci.yml`) на основе `npm run test:canon:coverage`.
+- [x] Добавить coverage threshold в CI (`.github/workflows/ci.yml`) на основе `npm run test:canon:coverage`. **Выполнено 8.11.2026.**
 - [ ] Расширить тесты для PIN-сессии и swarm-синхронизации (сейчас покрыты только protocol/storage).
 - [ ] Оптимизация размера APK: включить ProGuard/R8, проверить tree-shaking и assets.
 - [ ] Включить Dependabot alerts и security scanning в CI.
@@ -35,7 +36,7 @@
 
 ## Новые задачи (поставлены 8 ноября 2026)
 
-1. Настроить coverage-отчёт в CI и установить минимальный порог (например, 70% для protocol/).
+1. ~~Настроить coverage-отчёт в CI и установить минимальный порог (например, 70% для protocol/).~~ **Выполнено.**
 2. Провести аудит размера production-сборки (`npm run build:standalone`) и APK.
 3. Добавить интеграционные тесты для QR-обмена и локального клиринга.
 4. Подготовить миграционный путь для ACT_VERSION 2 (отложено в ROADMAP).
@@ -43,5 +44,6 @@
 
 ## История обновлений
 
+- 8 ноября 2026 ~13:20 MSK: Добавлен coverage threshold в CI (70/70/60/70). Статус обновлён.
 - 8 ноября 2026 ~12:20 MSK: Полная проверка (typecheck/lint/test:canon 25/25). Актуализирован план, поставлены новые задачи. Состояние стабильно.
 - 8 ноября 2026 ~11:25 MSK: Восстановлен файл, зафиксирован стабильный статус.
