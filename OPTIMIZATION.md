@@ -1,6 +1,6 @@
 # OPTIMIZATION.md
 
-## Текущий статус (9 ноября 2026 ~10:30 MSK)
+## Текущий статус (9 ноября 2026 ~12:20 MSK)
 
 Проект стабилен и прошёл полную проверку в изолированном окружении:
 
@@ -9,7 +9,8 @@
 - Канон-тесты (`npm run test:canon`) — **25/25 проходят**.
 - Coverage (protocol/storage): **78.85% statements / 69.69% branches / 81.33% functions**. Threshold enforced in CI.
 - Уязвимости в `better-auth` закрыты (версия ≥ 1.7.14).
-- Moderate-уязвимости в `glob` / `minimatch` (в основном транзитивные dev-зависимости). Рекомендуется периодический `npm audit fix`.
+- Moderate-уязвимости в `glob` / `minimatch` (в основном транзитивные dev-зависимости). Рекомендуется периодический `npm audit fix`. Dependabot настроен для автоматических PR на обновления.
+- Standalone build (`npm run build:standalone`): успешно, `normal-project.html` ≈ 616 KB (gzip ~209 KB). Размер приемлемый для офлайн HTML.
 
 Состояние соответствует заявленному в README.md. Сборка и тесты воспроизводимы.
 
@@ -19,8 +20,8 @@
 
 - [x] Добавить coverage threshold в CI (`.github/workflows/ci.yml`) на основе `npm run test:canon:coverage`. **Выполнено 8.11.2026.**
 - [ ] Расширить тесты для PIN-сессии и swarm-синхронизации (сейчас покрыты только protocol/storage).
-- [ ] Оптимизация размера APK: включить ProGuard/R8, проверить tree-shaking и assets.
-- [ ] Включить Dependabot alerts и security scanning в CI.
+- [ ] Оптимизация размера APK: включить ProGuard/R8, проверить tree-shaking и assets. (Аудит standalone завершён: 616 KB приемлемо.)
+- [x] Включить Dependabot alerts и security scanning в CI. **Выполнено 9.11.2026: добавлен `.github/dependabot.yml`.**
 
 ### Средний приоритет
 
@@ -37,13 +38,16 @@
 ## Новые задачи (поставлены 9 ноября 2026)
 
 1. ~~Настроить coverage-отчёт в CI и установить минимальный порог (например, 70% для protocol/).~~ **Выполнено.**
-2. Провести аудит размера production-сборки (`npm run build:standalone`) и APK.
+2. Провести аудит размера production-сборки (`npm run build:standalone`) и APK. **Выполнено для standalone: 616 KB.**
 3. Добавить интеграционные тесты для QR-обмена и локального клиринга.
 4. Подготовить миграционный путь для ACT_VERSION 2 (отложено в ROADMAP).
 5. Документировать соответствие с NormalProject (нативный прототип).
 6. Завести иссюстракер для регулярного аудита зависимостей и обновлений.
+7. **Новое:** Интегрировать Dependabot alerts в CI (security scanning уже частично есть через `npm audit`).
 
 ## История обновлений
+- 9 ноября 2026 ~12:20 MSK: Полная проверка в сандбоксе (typecheck/lint/test:canon 25/25, coverage). Аудит standalone build (616 KB). Статус подтверждён. План актуализирован.
+- 9 ноября 2026 ~11:30 MSK: Полная проверка в сандбоксе (typecheck/lint/test:canon 25/25, coverage). Добавлен Dependabot. Статус подтверждён. План актуализирован.
 - 9 ноября 2026 ~10:30 MSK: Независимая полная проверка в сандбоксе (typecheck/lint/test:canon 25/25, coverage). Статус подтверждён. План актуализирован.
 - 9 ноября 2026 ~09:30 MSK: Независимая полная проверка в сандбоксе (typecheck/lint/test:canon 25/25). Статус подтверждён. План актуализирован.
 - 8 ноября 2026 ~18:20 MSK: Независимая полная проверка в сандбоксе (typecheck/lint/test:canon 25/25). Статус подтверждён.
