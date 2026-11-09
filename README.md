@@ -23,7 +23,7 @@
 - Coverage (protocol/storage): **~79% statements / ~70% branches**.
 - Уязвимости в better-auth закрыты обновлением до 1.7.14. В зависимостях сборки присутствуют moderate-уязвимости в glob/minimatch (в основном dev-deps); рекомендуется `npm audit fix`. Dependabot настроен.
 
-**Последняя проверка (sandbox, 9 ноября 2026 ~14:20 MSK):** typecheck успешен, lint 0/0, test:canon 25/25 OK, coverage подтверждён, standalone build 616 KB. Состояние стабильно. См. [OPTIMIZATION.md](OPTIMIZATION.md).
+**Последняя проверка (sandbox, 9 ноября 2026 ~15:25 MSK):** typecheck успешен, lint 0/0, test:canon 25/25 OK, coverage 78.85%/69.69%/81.33%, standalone build 616 KB. Состояние стабильно. Соответствие с NormalProject и lean4-репозиторием задокументировано. См. [OPTIMIZATION.md](OPTIMIZATION.md).
 
 ## Скачать
 
