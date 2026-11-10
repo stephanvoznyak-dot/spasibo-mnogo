@@ -11,11 +11,11 @@
 - Coverage threshold в CI (≥70% lines/statements, ≥60% branches)
 - Документация и связи с NormalProject / Lean формализациями
 
-## В работе / приоритеты (8.11.2026)
+## В работе / приоритеты (10.11.2026)
 
-- [ ] Расширить тесты для PIN-сессии и swarm-синхронизации
+- [x] Расширить тесты для PIN-сессии (3 теста добавлены) и swarm-синхронизации (swarm в очереди)
 - [ ] Оптимизация размера APK (ProGuard/R8, tree-shaking, assets)
-- [ ] Включить Dependabot alerts и security scanning в CI
+- [x] Включить Dependabot alerts и security scanning в CI
 - [ ] Ревью offline-first / swarm (синхронизация между вкладками, конфликт-резолвинг)
 - [ ] Синхронизация Lean-формализаций с lean4-token-units-invariants
 - [ ] Анализ соответствия серии ya-ryadom (Mini App / Android)
@@ -40,4 +40,4 @@ npm install --legacy-peer-deps && npm run restore:store && npm run dev
 npm run test:canon
 ```
 
-**Статус на 8 ноября 2026:** проект стабилен, документация синхронизирована с OPTIMIZATION.md. Новые задачи подготовлены к созданию в Issues.
+**Статус на 10 ноября 2026:** проект стабилен, добавлены PIN-тесты (28/28 canon), документация синхронизирована с OPTIMIZATION.md.
