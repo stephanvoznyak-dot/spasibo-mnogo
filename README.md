@@ -19,11 +19,11 @@
 - Протокол реализован: BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR-обмен.
 - Связан с нативным Android-прототипом в репозитории [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и формализациями на Lean 4 ([lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants)).
 - Typecheck (`tsc --noEmit`) проходит. Lint: **0 errors, 0 warnings**.
-- Канон-тесты (`npm run test:canon`) — **25/25 проходят** на Node 20 (through `tsx`).
+- Канон-тесты (`npm run test:canon`) — **28/28 проходят** на Node 20 (through `tsx`). Включают protocol/storage + PIN-сессию.
 - Coverage (protocol/storage): **~79% statements / ~70% branches**.
 - Уязвимости в better-auth закрыты обновлением до 1.7.14. В зависимостях сборки присутствуют moderate-уязвимости в glob/minimatch (в основном dev-deps); рекомендуется `npm audit fix`. Dependabot настроен.
 
-**Последняя проверка (sandbox, 10 ноября 2026 ~10:25 MSK):** typecheck успешен, lint 0/0, test:canon 25/25 OK, coverage 78.85%/69.69%/81.33%, standalone build ≈ 616-631 KB (gzip ~209 KB). Состояние стабильно. Соответствие с NormalProject и lean4-репозиторием задокументировано. См. [OPTIMIZATION.md](OPTIMIZATION.md).
+**Последняя проверка (sandbox, 10 ноября 2026 ~12:20 MSK):** typecheck успешен, lint 0/0, test:canon 28/28 OK (добавлены PIN-тесты), coverage protocol/storage ~79%, standalone build ≈ 616-631 KB. Состояние стабильно.
 
 ## Скачать
 
@@ -61,7 +61,7 @@ State = deriveState(History)
 npm install --legacy-peer-deps
 npm run restore:store
 npm run dev
-npm run test:canon   # 25 тестов, работает на Node 20+
+npm run test:canon   # 28 тестов, работает на Node 20+
 ```
 
 ## Сборки
