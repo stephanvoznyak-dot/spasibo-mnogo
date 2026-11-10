@@ -1,13 +1,13 @@
 # OPTIMIZATION.md
 
-## Текущий статус (10 ноября 2026 ~10:25 MSK)
+## Текущий статус (10 ноября 2026 ~13:20 MSK)
 
 Проект стабилен и прошёл полную проверку в изолированном окружении:
 
 - Typecheck (`tsc --noEmit`) — **успешно**.
 - Lint (`eslint .`) — **0 errors, 0 warnings**.
-- Канон-тесты (`npm run test:canon`) — **25/25 проходят**.
-- Coverage (protocol/storage): **78.85% statements / 69.69% branches / 81.33% functions**. Threshold enforced in CI.
+- Канон-тесты (`npm run test:canon`) — **28/28 проходят** (включая PIN-сессию).
+- Coverage (protocol/storage + pin-session): **79.13% statements / 70.37% branches / 82.05% functions**. Threshold enforced in CI.
 - Уязвимости в `better-auth` закрыты (версия ≥ 1.7.14).
 - Moderate-уязвимости в `glob` / `minimatch` (в основном транзитивные dev-зависимости). Рекомендуется периодический `npm audit fix`. Dependabot настроен для автоматических PR на обновления.
 - Standalone build (`npm run build:standalone`): успешно, `normal-project.html` ≈ 616-631 KB (gzip ~209 KB). Размер приемлемый для офлайн HTML.
@@ -19,7 +19,7 @@
 ### Высокий приоритет
 
 - [x] Добавить coverage threshold в CI (`.github/workflows/ci.yml`) на основе `npm run test:canon:coverage`. **Выполнено 8.11.2026.**
-- [ ] Расширить тесты для PIN-сессии и swarm-синхронизации (сейчас покрыты только protocol/storage).
+- [ ] Расширить тесты для PIN-сессии и swarm-синхронизации (сейчас покрыты только protocol/storage; PIN добавлен).
 - [ ] Оптимизация размера APK: включить ProGuard/R8, проверить tree-shaking и assets. (Аудит standalone завершён: ~616-631 KB приемлемо.)
 - [x] Включить Dependabot alerts и security scanning в CI. **Выполнено 9.11.2026: добавлен `.github/dependabot.yml`.**
 
@@ -46,6 +46,7 @@
 7. **Новое:** Интегрировать Dependabot alerts в CI (security scanning уже частично есть через `npm audit`).
 8. **Новое:** Проверить соответствие протокола между spasibo-mnogo, NormalProject и lean4-token-units-invariants; документировать различия. **Выполнено.**
 9. **Новое:** Создать GitHub Issues для высокоприоритетных открытых задач (PIN/swarm тесты, APK оптимизация, интеграционные QR/клиринг тесты). Формы создания Issues предложены пользователю для подтверждения.
+10. **Новое (13:20 MSK):** Повысить покрытие clearing-sign.ts и qr-messages.ts; рассмотреть удаление неиспользуемых зависимостей (recharts).
 
 ## Соответствие репозиториев
 
@@ -57,6 +58,7 @@
 Различия: spasibo-mnogo — industrial sample с полным CI/тестами; NormalProject — ранний нативный прототип; Lean — математическая верификация отдельных свойств.
 
 ## История обновлений
+- 10 ноября 2026 ~13:20 MSK: Полная проверка в сандбоксе (typecheck/lint/test:canon 28/28, coverage 79.13/70.37/82.05, standalone ~616-631 KB). Статус подтверждён. Документация актуализирована. Добавлена задача по покрытию clearing-sign/qr-messages.
 - 10 ноября 2026 ~10:25 MSK: Повторная полная проверка в сандбоксе (typecheck/lint/test:canon 25/25, coverage 78.85/69.69/81.33, standalone ~616 KB). Статус подтверждён. Документация актуализирована.
 - 10 ноября 2026 ~09:20 MSK: Полная проверка в сандбоксе (typecheck/lint/test:canon 25/25, coverage 78.85/69.69/81.33, standalone ~631 KB). Статус подтверждён. Документация актуализирована. Предложены формы создания Issues для открытых задач.
 - 9 ноября 2026 ~18:30 MSK: Повторная полная проверка в сандбоксе (typecheck/lint/test:canon 25/25, coverage 78.85/69.69/81.33, standalone 616 KB). Статус подтверждён. Документация актуализирована. Созданы Issues для открытых задач.
