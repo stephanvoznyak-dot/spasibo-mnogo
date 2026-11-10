@@ -1,6 +1,6 @@
 # OPTIMIZATION.md
 
-## Текущий статус (10 ноября 2026 ~09:20 MSK)
+## Текущий статус (10 ноября 2026 ~10:25 MSK)
 
 Проект стабилен и прошёл полную проверку в изолированном окружении:
 
@@ -10,7 +10,7 @@
 - Coverage (protocol/storage): **78.85% statements / 69.69% branches / 81.33% functions**. Threshold enforced in CI.
 - Уязвимости в `better-auth` закрыты (версия ≥ 1.7.14).
 - Moderate-уязвимости в `glob` / `minimatch` (в основном транзитивные dev-зависимости). Рекомендуется периодический `npm audit fix`. Dependabot настроен для автоматических PR на обновления.
-- Standalone build (`npm run build:standalone`): успешно, `normal-project.html` ≈ 631 KB (gzip ~209 KB). Размер приемлемый для офлайн HTML.
+- Standalone build (`npm run build:standalone`): успешно, `normal-project.html` ≈ 616-631 KB (gzip ~209 KB). Размер приемлемый для офлайн HTML.
 
 Состояние соответствует заявленному в README.md. Сборка и тесты воспроизводимы.
 
@@ -20,7 +20,7 @@
 
 - [x] Добавить coverage threshold в CI (`.github/workflows/ci.yml`) на основе `npm run test:canon:coverage`. **Выполнено 8.11.2026.**
 - [ ] Расширить тесты для PIN-сессии и swarm-синхронизации (сейчас покрыты только protocol/storage).
-- [ ] Оптимизация размера APK: включить ProGuard/R8, проверить tree-shaking и assets. (Аудит standalone завершён: ~631 KB приемлемо.)
+- [ ] Оптимизация размера APK: включить ProGuard/R8, проверить tree-shaking и assets. (Аудит standalone завершён: ~616-631 KB приемлемо.)
 - [x] Включить Dependabot alerts и security scanning в CI. **Выполнено 9.11.2026: добавлен `.github/dependabot.yml`.**
 
 ### Средний приоритет
@@ -38,7 +38,7 @@
 ## Новые задачи (поставлены 10 ноября 2026)
 
 1. ~~Настроить coverage-отчёт в CI и установить минимальный порог (например, 70% для protocol/).~~ **Выполнено.**
-2. Провести аудит размера production-сборки (`npm run build:standalone`) и APK. **Выполнено для standalone: ~631 KB.**
+2. Провести аудит размера production-сборки (`npm run build:standalone`) и APK. **Выполнено для standalone: ~616-631 KB.**
 3. Добавить интеграционные тесты для QR-обмена и локального клиринга.
 4. Подготовить миграционный путь для ACT_VERSION 2 (отложено в ROADMAP).
 5. Документировать соответствие с NormalProject (нативный прототип). **Выполнено.**
@@ -57,6 +57,7 @@
 Различия: spasibo-mnogo — industrial sample с полным CI/тестами; NormalProject — ранний нативный прототип; Lean — математическая верификация отдельных свойств.
 
 ## История обновлений
+- 10 ноября 2026 ~10:25 MSK: Повторная полная проверка в сандбоксе (typecheck/lint/test:canon 25/25, coverage 78.85/69.69/81.33, standalone ~616 KB). Статус подтверждён. Документация актуализирована.
 - 10 ноября 2026 ~09:20 MSK: Полная проверка в сандбоксе (typecheck/lint/test:canon 25/25, coverage 78.85/69.69/81.33, standalone ~631 KB). Статус подтверждён. Документация актуализирована. Предложены формы создания Issues для открытых задач.
 - 9 ноября 2026 ~18:30 MSK: Повторная полная проверка в сандбоксе (typecheck/lint/test:canon 25/25, coverage 78.85/69.69/81.33, standalone 616 KB). Статус подтверждён. Документация актуализирована. Созданы Issues для открытых задач.
 - 9 ноября 2026 ~16:30 MSK: Повторная полная проверка в сандбоксе (typecheck/lint/test:canon 25/25, coverage 78.85/69.69/81.33, standalone 616 KB). Статус подтверждён. Документация актуализирована.
