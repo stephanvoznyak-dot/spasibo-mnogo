@@ -23,7 +23,7 @@
 - Coverage (protocol/storage + pin-session): **83.46% statements / 71.78% branches / 85.89% functions**.
 - Уязвимости в better-auth закрыты обновлением до 1.7.14. В зависимостях сборки присутствуют moderate-уязвимости в glob/minimatch (в основном dev-deps); рекомендуется `npm audit fix`. Dependabot настроен.
 
-**Последняя проверка (sandbox, 11 ноября 2026 ~12:20 MSK):** typecheck успешен, lint 0/0, test:canon 32/32 OK. Coverage подтверждён (83.46/71.78/85.89). Состояние стабильно. Зависимости установлены, сборка воспроизводима.
+**Последняя проверка (sandbox, 11 ноября 2026 ~15:20 MSK):** typecheck успешен, lint 0/0, test:canon 32/32 OK. Coverage подтверждён (83.46/71.78/85.89). Состояние стабильно. Зависимости установлены, сборка воспроизводима. Moderate-уязвимости в glob/minimatch (дев-зависимости) сохраняются; Dependabot отслеживает обновления.
 
 ## Скачать
 
@@ -61,7 +61,7 @@ State = deriveState(History)
 npm install --legacy-peer-deps
 npm run restore:store
 npm run dev
-npm run test:canon   # 32 тестов, работает на Node 20+
+npm run test:canon   # 32 теста, работает на Node 20+
 ```
 
 ## Сборки
