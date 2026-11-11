@@ -7,13 +7,14 @@
 - Lean deps; `dev:app` = продукт
 - **app-builder leftovers полностью удалены** (auth, app-data, multiplayer, routes…)
 - Протокол normal-project v1: BIP-39 → Ed25519, M1/M2, локальный клиринг, офлайн QR
-- Typecheck + 25/25 canon-тестов, lint 0 errors
+- Typecheck + 32/32 canon-тестов, lint 0 errors
 - Coverage threshold в CI (≥70% lines/statements, ≥60% branches)
 - Документация и связи с NormalProject / Lean формализациями
 
-## В работе / приоритеты (10.11.2026)
+## В работе / приоритеты (11.11.2026)
 
 - [x] Расширить тесты для PIN-сессии (3 теста добавлены) и swarm-синхронизации (swarm в очереди)
+- [x] Добавлены тесты для clearing-sign.ts (покрытие 91%)
 - [ ] Оптимизация размера APK (ProGuard/R8, tree-shaking, assets)
 - [x] Включить Dependabot alerts и security scanning в CI
 - [ ] Ревью offline-first / swarm (синхронизация между вкладками, конфликт-резолвинг)
@@ -40,4 +41,4 @@ npm install --legacy-peer-deps && npm run restore:store && npm run dev
 npm run test:canon
 ```
 
-**Статус на 10 ноября 2026:** проект стабилен, добавлены PIN-тесты (28/28 canon), документация синхронизирована с OPTIMIZATION.md.
+**Статус на 11 ноября 2026 ~12:20 MSK:** проект стабилен, добавлены тесты clearing-sign (32/32 canon), покрытие повышено до 83.46%. Документация синхронизирована с OPTIMIZATION.md.
