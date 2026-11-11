@@ -23,7 +23,7 @@
 - Coverage (protocol/storage): **~79% statements / ~70% branches**.
 - Уязвимости в better-auth закрыты обновлением до 1.7.14. В зависимостях сборки присутствуют moderate-уязвимости в glob/minimatch (в основном dev-deps); рекомендуется `npm audit fix`. Dependabot настроен.
 
-**Последняя проверка (sandbox, 10 ноября 2026 ~17:32 MSK):** typecheck успешен, lint 0/0, test:canon 28/28 OK, coverage 79.13% statements / 70.37% branches / 82.05% functions. Состояние стабильно. Зависимости установлены, сборка воспроизводима.
+**Последняя проверка (sandbox, 11 ноября 2026 ~09:20 MSK):** typecheck успешен, lint 0/0, test:canon 28/28 OK. Standalone build: 629 KB (gzip 209 KB). Состояние стабильно. Зависимости установлены, сборка воспроизводима. Удалена неиспользуемая зависимость recharts.
 
 ## Скачать
 
