@@ -20,10 +20,10 @@
 - Связан с нативным Android-прототипом в репозитории [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и формализациями на Lean 4 ([lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants)).
 - Typecheck (`tsc --noEmit`) проходит. Lint: **0 errors, 0 warnings**.
 - Канон-тесты (`npm run test:canon`) — **28/28 проходят** на Node 20 (through `tsx`). Включают protocol/storage + PIN-сессию.
-- Coverage (protocol/storage): **~79% statements / ~70% branches**.
+- Coverage (protocol/storage + pin-session): **79.13% statements / 70.37% branches / 82.05% functions**.
 - Уязвимости в better-auth закрыты обновлением до 1.7.14. В зависимостях сборки присутствуют moderate-уязвимости в glob/minimatch (в основном dev-deps); рекомендуется `npm audit fix`. Dependabot настроен.
 
-**Последняя проверка (sandbox, 11 ноября 2026 ~09:20 MSK):** typecheck успешен, lint 0/0, test:canon 28/28 OK. Standalone build: 629 KB (gzip 209 KB). Состояние стабильно. Зависимости установлены, сборка воспроизводима. Удалена неиспользуемая зависимость recharts.
+**Последняя проверка (sandbox, 11 ноября 2026 ~10:25 MSK):** typecheck успешен, lint 0/0, test:canon 28/28 OK. Coverage подтверждён (79.13/70.37/82.05). Состояние стабильно. Зависимости установлены, сборка воспроизводима.
 
 ## Скачать
 
