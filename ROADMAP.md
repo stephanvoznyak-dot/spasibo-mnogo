@@ -41,4 +41,4 @@ npm install --legacy-peer-deps && npm run restore:store && npm run dev
 npm run test:canon
 ```
 
-**Статус на 11 ноября 2026 ~12:20 MSK:** проект стабилен, добавлены тесты clearing-sign (32/32 canon), покрытие повышено до 83.46%. Документация синхронизирована с OPTIMIZATION.md.
+**Статус на 11 ноября 2026 ~15:20 MSK:** проект стабилен, покрытие 83.46%. Документация синхронизирована с OPTIMIZATION.md. Новые задачи: повышение покрытия qr-messages/graph и тесты сварма.
