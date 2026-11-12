@@ -35,7 +35,7 @@ function entry(
   to: Uint8Array,
   amount: number,
   remaining: number,
-  status: LedgerEntry["status"] = "active",
+  status: LedgerEntry["status"] = "finalized",
   hasM2 = true,
 ): LedgerEntry {
   return {
@@ -64,7 +64,7 @@ describe("graph utilities", () => {
   });
 
   it("remainingOf respects status and M2", () => {
-    const e1 = entry(a, b, 100, 50, "active", true);
+    const e1 = entry(a, b, 100, 50, "finalized", true);
     assert.equal(remainingOf(e1), 50);
     const e2 = entry(a, b, 100, 50, "cleared", true);
     assert.equal(remainingOf(e2), 0);
@@ -76,9 +76,9 @@ describe("graph utilities", () => {
 
   it("activeEdges filters correctly", () => {
     const entries = [
-      entry(a, b, 100, 30, "active", true),
-      entry(b, c, 50, 0, "active", true), // weight 0
-      entry(a, c, 20, 20, "active", false), // no M2
+      entry(a, b, 100, 30, "finalized", true),
+      entry(b, c, 50, 0, "finalized", true), // weight 0
+      entry(a, c, 20, 20, "finalized", false), // no M2
       entry(c, a, 10, 10, "cleared", true),
     ];
     const edges = activeEdges(entries);
