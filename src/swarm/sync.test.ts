@@ -4,7 +4,7 @@ import { startSwarm } from "./sync.ts";
 import type { Act } from "../protocol/types.ts";
 import { bytesToHex } from "../crypto/bytes.ts";
 
-// Mock browser globals for Node test runner
+// Mock browser globals for Node test runner (BroadcastChannel path still requires real BC)
 if (typeof globalThis.window === "undefined") {
   (globalThis as any).window = {
     setInterval: setInterval,
@@ -17,8 +17,8 @@ function dummyAct(hasM2 = true): Act {
   hash[0] = 42;
   return {
     version: 1,
-    from: new Uint8Array([1]),
-    to: new Uint8Array([2]),
+    from: new Uint8Array(32).fill(1),
+    to: new Uint8Array(32).fill(2),
     amount: 100,
     note: "test",
     timestamp: Date.now(),
@@ -34,7 +34,11 @@ describe("swarm sync", () => {
 
   after(() => {
     for (const h of handles) {
-      try { h.close(); } catch { /* ignore close errors */ }
+      try {
+        h.close();
+      } catch {
+        /* ignore close errors */
+      }
     }
   });
 
