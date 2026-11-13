@@ -26,7 +26,7 @@ describe("swarm sync", () => {
 
   after(() => {
     for (const h of handles) {
-      try { h.close(); } catch {}
+      try { h.close(); } catch { /* ignore close errors */ }
     }
   });
 
