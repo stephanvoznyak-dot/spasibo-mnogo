@@ -1,11 +1,11 @@
 # OPTIMIZATION.md
 
-## Текущий статус (13 ноября 2026, после исправления lint)
+## Текущий статус (13 ноября 2026, ~13:20 MSK, sandbox)
 
 Проект стабилен и прошёл полную проверку в изолированном окружении (sandbox, Node 20):
 
 - Typecheck (`tsc --noEmit`) — **успешно**.
-- Lint (`eslint .`) — **0 errors, 0 warnings** (исправлен empty catch в `src/swarm/sync.test.ts`).
+- Lint (`eslint .`) — **0 errors, 0 warnings**.
 - Канон-тесты (`npm run test:canon`) — **47/47 проходят**.
 - Coverage (protocol/storage + pin-session): **87.58% statements / 78.05% branches / 91.02% functions**.
 - graph.ts покрытие **100% statements / 97.61% branches**.
@@ -55,6 +55,7 @@
 Различия: spasibo-mnogo — industrial sample с полным CI/тестами; NormalProject — ранний нативный прототип; Lean — математическая верификация отдельных свойств.
 
 ## История обновлений
+- 13 ноября 2026 (~13:20 MSK): Подтверждены typecheck/lint/test:canon 47/47 и coverage 87.58/78.05/91.02 в сандбоксе. Документация обновлена. Состояние стабильно.
 - 13 ноября 2026 (~11:22 MSK): Исправлен empty catch в swarm-тестах (lint 0/0). Подтверждены typecheck/lint/test:canon 47/47. Документация обновлена.
 - 13 ноября 2026 (повторная проверка): Подтверждены typecheck/lint/test:canon 47/47 и coverage. Начаты unit-тесты для swarm (`src/swarm/sync.test.ts`). Обновлены задачи.
 - 13 ноября 2026: Актуализация состояния и документации. Подготовлены формы для создания Issues по высокоприоритетным задачам.
