@@ -53,9 +53,11 @@ export function startSwarm(opts: {
       /* ignore */
     }
     try {
-      localStorage.setItem("np-swarm-ping", JSON.stringify({ t: Date.now(), kind: msg.kind }));
+      if (typeof localStorage !== "undefined") {
+        localStorage.setItem("np-swarm-ping", JSON.stringify({ t: Date.now(), kind: msg.kind }));
+      }
     } catch {
-      /* quota */
+      /* quota or unavailable */
     }
   };
 
@@ -120,7 +122,10 @@ export function startSwarm(opts: {
   };
 
   broadcastBitfield();
-  const timer = window.setInterval(broadcastBitfield, 8000);
+  // Prefer globalThis so Node test runner (no window) does not throw ReferenceError.
+  const setInt = typeof globalThis.setInterval === "function" ? globalThis.setInterval.bind(globalThis) : null;
+  const clearInt = typeof globalThis.clearInterval === "function" ? globalThis.clearInterval.bind(globalThis) : null;
+  const timer = setInt ? setInt(broadcastBitfield, 8000) : 0;
 
   return {
     status: () => ({ peers, lastEvent }),
@@ -130,7 +135,7 @@ export function startSwarm(opts: {
     },
     broadcastBitfield,
     close: () => {
-      window.clearInterval(timer);
+      if (clearInt && timer) clearInt(timer);
       channel.removeEventListener("message", onMessage);
       channel.close();
     },
