@@ -4,6 +4,14 @@ import { startSwarm } from "./sync.ts";
 import type { Act } from "../protocol/types.ts";
 import { bytesToHex } from "../crypto/bytes.ts";
 
+// Mock browser globals for Node test runner
+if (typeof globalThis.window === "undefined") {
+  (globalThis as any).window = {
+    setInterval: setInterval,
+    clearInterval: clearInterval,
+  };
+}
+
 function dummyAct(hasM2 = true): Act {
   const hash = new Uint8Array(32);
   hash[0] = 42;
