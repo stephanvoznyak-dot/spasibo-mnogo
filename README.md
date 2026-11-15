@@ -23,7 +23,7 @@
 - Coverage (protocol/storage + pin-session): **87.58% statements / 78.05% branches / 91.02% functions**.
 - Уязвимости в better-auth закрыты обновлением до 1.7.14. В зависимостях сборки присутствуют moderate-уязвимости в typescript-eslint / glob/minimatch (в основном dev-deps); рекомендуется `npm audit fix`. Dependabot настроен. npm audit: 10 moderate.
 
-**Последняя проверка (15 ноября 2026, ~15:30 MSK):** typecheck успешен, lint 0/0, test:canon 47/47 OK. Coverage подтверждён (87.58/78.05/91.02). Состояние стабильно. Документация актуализирована.
+**Последняя проверка (15 ноября 2026, ~16:30 MSK):** typecheck успешен, lint 0/0, test:canon 47/47 OK. Coverage подтверждён (87.58/78.05/91.02). Состояние стабильно. Документация актуализирована.
 
 ## Скачать
 
