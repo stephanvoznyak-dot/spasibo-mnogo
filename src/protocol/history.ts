@@ -1,7 +1,8 @@
 /**
  * History API — append-only. Clearing is a local signed hypothesis (B-a).
  */
-import { bytesToHex } from "@/crypto/bytes";
+import { bytesEqual, bytesToHex } from "@/crypto/bytes";
+import { verify } from "@/crypto/signature";
 import { verifyAct } from "./act";
 import {
   appendClearing as deriveAppendClearing,
@@ -10,6 +11,7 @@ import {
   makeClearingAssertion,
   makeM2Assertion,
 } from "./derive";
+import { hashActBody } from "./serialization";
 import {
   ProtocolError,
   type Act,
@@ -59,18 +61,22 @@ export function appendM2(
   sigM2: Uint8Array,
 ): { history: History; state: State; added: boolean; assertion: M2Assertion } {
   const hashHex = bytesToHex(actHash);
-  const hasAct = history.some((e) => e.kind === "act" && bytesToHex(e.wire.hash) === hashHex);
-  if (!hasAct) {
+  const actEvent = history.find((e) => e.kind === "act" && bytesToHex(hashActBody(e.wire)) === hashHex);
+  if (!actEvent || actEvent.kind !== "act") {
     throw new ProtocolError(`m2: акт ${hashHex.slice(0, 12)}… отсутствует`, "M2");
   }
-  const hasM2 = history.some(
-    (e) => e.kind === "m2" && bytesToHex(e.assertion.actHash) === hashHex,
-  );
-  if (hasM2) {
-    const assertion = makeM2Assertion(actHash, sigM2);
-    return { history, state: deriveState(history), added: false, assertion };
+  const bodyHash = hashActBody(actEvent.wire);
+  if (!verify(sigM2, bodyHash, actEvent.wire.to)) {
+    throw new ProtocolError("Подпись контрагента (M2) недействительна", "SIG_M2");
   }
-  const assertion = makeM2Assertion(actHash, sigM2);
+  const prev = history.find((e) => e.kind === "m2" && bytesToHex(e.assertion.actHash) === hashHex);
+  if (prev && prev.kind === "m2") {
+    if (!bytesEqual(prev.assertion.sigM2, sigM2)) {
+      throw new ProtocolError("m2: конфликт подписей для одного акта", "M2");
+    }
+    return { history, state: deriveState(history), added: false, assertion: prev.assertion };
+  }
+  const assertion = makeM2Assertion(bodyHash, sigM2);
   const next: History = [...history, { kind: "m2", assertion }];
   return { history: next, state: deriveState(next), added: true, assertion };
 }

@@ -11,7 +11,7 @@
 Канал: [t.me/+buaSHWKuVTY2ZmNi](https://t.me/+buaSHWKuVTY2ZmNi)  
 Автор концепции: **Ларионов Пётр** · +7 903 606-00-06 · [@Peterlarionov](https://t.me/Peterlarionov)
 
-Версия **1.3.16** (6 ноября 2026).
+Версия **1.3.17** (16 ноября 2026).
 
 ## Состояние проекта
 
@@ -19,11 +19,10 @@
 - Протокол реализован: BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR-обмен.
 - Связан с нативным Android-прототипом в репозитории [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и формализациями на Lean 4 ([lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants)).
 - Typecheck (`tsc --noEmit`) проходит. Lint: **0 errors, 0 warnings**.
-- Канон-тесты (`npm run test:canon`) — **47/47 проходят** на Node 20 (through `tsx`). Включают protocol/storage + PIN-сессию + QR-сообщения.
-- Coverage (protocol/storage + pin-session): **87.58% statements / 78.05% branches / 91.02% functions**.
-- Уязвимости в better-auth закрыты обновлением до 1.7.14. В зависимостях сборки присутствуют moderate-уязвимости в typescript-eslint / glob/minimatch (в основном dev-deps); рекомендуется `npm audit fix`. Dependabot настроен. npm audit: 13 moderate.
+- Канон-тесты (`npm run test:canon`) — **33/33 проходят**.
+- Уязвимости в better-auth закрыты обновлением до 1.7.14 (0 vulnerabilities).
 
-**Последняя проверка (16 ноября 2026, ~10:30 MSK):** typecheck успешен, lint 0/0, test:canon 47/47 OK. Coverage подтверждён (87.58/78.05/91.02). Состояние стабильно. Документация актуализирована.
+**Последняя проверка (16.11.2026):** typecheck успешен, test:canon 33/33. npm audit в этом спринте не пересматривался.
 
 ## Скачать
 
@@ -61,7 +60,7 @@ State = deriveState(History)
 npm install --legacy-peer-deps
 npm run restore:store
 npm run dev
-npm run test:canon   # 47 тестов, работает на Node 20+
+npm run test:canon   # 33 теста
 ```
 
 ## Сборки

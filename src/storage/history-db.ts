@@ -3,10 +3,12 @@
  * State is never persisted — always derived via deriveState(history).
  */
 import { bytesToHex, hexToBytes } from "@/crypto/bytes";
+import { verify } from "@/crypto/signature";
 import { verifyAct } from "@/protocol/act";
-import { deriveState } from "@/protocol/history";
-import { decodeAct, encodeAct } from "@/protocol/serialization";
+import { deriveState, historyFromActs } from "@/protocol/history";
+import { decodeAct, encodeAct, hashActBody } from "@/protocol/serialization";
 import type {
+  Act,
   HashHex,
   History,
   HistoryEvent,
@@ -246,8 +248,80 @@ export async function appendHistoryEvent(ev: HistoryEvent): Promise<{ seq: numbe
 
     if (ev.kind === "m2") {
       const actHashHex = bytesToHex(ev.assertion.actHash);
-      const exists = current.some((r) => r.kind === "m2" && r.assertion?.actHashHex === actHashHex);
-      if (exists) {
+      const sigHex = bytesToHex(ev.assertion.sigM2);
+      const prev = current.find((r) => r.kind === "m2" && r.assertion?.actHashHex === actHashHex);
+      if (prev) {
+        if (prev.assertion?.sigM2Hex !== sigHex) {
+          try {
+            tx.abort();
+          } catch {
+            /* already finishing */
+          }
+          throw new ProtocolError("m2: конфликт подписей для одного акта", "M2");
+        }
+        await txDone(tx);
+        return { seq: current.length - 1, added: false };
+      }
+      let matched: Act | null = null;
+      for (const row of current) {
+        if (row.kind !== "act" || !row.wire) continue;
+        try {
+          const act = decodeAct(row.wire);
+          if (bytesToHex(hashActBody(act)) === actHashHex) {
+            matched = act;
+            break;
+          }
+        } catch {
+          /* damaged row is rejected by load, not by this scan */
+        }
+      }
+      if (!matched) {
+        try {
+          tx.abort();
+        } catch {
+          /* already finishing */
+        }
+        throw new ProtocolError(`m2: акт ${actHashHex.slice(0, 12)}… отсутствует`, "M2");
+      }
+      if (!verify(ev.assertion.sigM2, hashActBody(matched), matched.to)) {
+        try {
+          tx.abort();
+        } catch {
+          /* already finishing */
+        }
+        throw new ProtocolError("Подпись контрагента (M2) недействительна", "SIG_M2");
+      }
+    }
+
+    if (ev.kind === "clearing") {
+      const nonceHex = bytesToHex(ev.assertion.nonce);
+      const prev = current.find((r) => r.kind === "clearing" && r.assertion?.nonceHex === nonceHex);
+      if (prev) {
+        const same =
+          prev.assertion?.residual === ev.assertion.residual &&
+          prev.assertion?.appliedAt === ev.assertion.appliedAt &&
+          JSON.stringify(prev.assertion?.cycle ?? []) === JSON.stringify(ev.assertion.cycle);
+        if (!same) {
+          try {
+            tx.abort();
+          } catch {
+            /* already finishing */
+          }
+          throw new ProtocolError("Повтор клиринга с тем же nonce, но другим телом", "DUPLICATE");
+        }
+        await txDone(tx);
+        return { seq: current.length - 1, added: false };
+      }
+    }
+
+    if (ev.kind === "write_down") {
+      const key = `${bytesToHex(ev.assertion.actHash)}:${ev.assertion.delta}:${ev.assertion.appliedAt}`;
+      const prev = current.find(
+        (r) =>
+          r.kind === "write_down" &&
+          `${r.assertion?.actHashHex}:${r.assertion?.delta}:${r.assertion?.appliedAt}` === key,
+      );
+      if (prev) {
         await txDone(tx);
         return { seq: current.length - 1, added: false };
       }
@@ -388,7 +462,39 @@ export function importHistoryJson(json: string): History {
       }
     }
     deriveState(history);
-    return history;
+    return dedupeImportedHistory(history);
   }
   throw new ProtocolError("Неизвестный формат экспорта (ожидается history v2)", "IMPORT");
+}
+
+function dedupeImportedHistory(history: History): History {
+  const out: History = [];
+  const acts = new Set<string>();
+  const m2s = new Set<string>();
+  const clearings = new Set<string>();
+  const writes = new Set<string>();
+  for (const ev of history) {
+    if (ev.kind === "act") {
+      const id = bytesToHex(hashActBody(ev.wire));
+      if (acts.has(id)) continue;
+      acts.add(id);
+      out.push(ev);
+    } else if (ev.kind === "m2") {
+      const id = bytesToHex(ev.assertion.actHash);
+      if (m2s.has(id)) continue;
+      m2s.add(id);
+      out.push(ev);
+    } else if (ev.kind === "clearing") {
+      const id = bytesToHex(ev.assertion.nonce);
+      if (clearings.has(id)) continue;
+      clearings.add(id);
+      out.push(ev);
+    } else {
+      const id = `${bytesToHex(ev.assertion.actHash)}:${ev.assertion.delta}:${ev.assertion.appliedAt}`;
+      if (writes.has(id)) continue;
+      writes.add(id);
+      out.push(ev);
+    }
+  }
+  return out;
 }

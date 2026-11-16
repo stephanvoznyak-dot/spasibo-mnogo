@@ -3,7 +3,9 @@
  * Clearing = local hypothesis (Stage B-a): author-signed, not multi-party.
  */
 import { bytesEqual, bytesToHex, randomBytes } from "@/crypto/bytes";
+import { verify } from "@/crypto/signature";
 import { signClearingAssertion, verifyClearingAssertion } from "./clearing-sign";
+import { hashActBody } from "./serialization";
 import {
   edgeKey,
   emptyState,
@@ -61,19 +63,25 @@ function finalizeAct(state: State, act: Act): void {
   addNet(state.net, to, +remaining);
 }
 
-function ingestAct(state: State, act: Act): void {
-  const hashHex = bytesToHex(act.hash);
-  if (state.acts.has(hashHex)) return;
+function ingestAct(state: State, act: Act, seenNonce: Set<string>): void {
+  const bodyHash = hashActBody(act);
+  const id = bytesToHex(bodyHash);
+  if (state.acts.has(id)) return;
 
-  state.acts.set(hashHex, act);
-
-  if (!act.sigM2) {
-    state.status.set(hashHex, "pending_m2");
-    state.remaining.set(hashHex, 0);
-    return;
+  const nonceKey = `${bytesToHex(act.from)}:${bytesToHex(act.nonce)}`;
+  if (seenNonce.has(nonceKey)) {
+    throw new ProtocolError("nonce уже использован этим отправителем", "NONCE");
   }
+  seenNonce.add(nonceKey);
 
-  finalizeAct(state, act);
+  const sigM2 = act.sigM2;
+  const stored: Act = { ...act, hash: bodyHash, sigM2: null };
+  state.acts.set(id, stored);
+  state.status.set(id, "pending_m2");
+  state.remaining.set(id, 0);
+  if (sigM2) {
+    applyM2(state, { actHash: bodyHash, sigM2, appliedAt: act.timestamp });
+  }
 }
 
 function applyM2(state: State, assertion: M2Assertion): void {
@@ -89,6 +97,13 @@ function applyM2(state: State, assertion: M2Assertion): void {
   if (!existing) {
     throw new ProtocolError(`m2: акт ${hashHex.slice(0, 12)}… не найден в истории`, "M2");
   }
+  const bodyHash = hashActBody(existing);
+  if (!bytesEqual(bodyHash, assertion.actHash)) {
+    throw new ProtocolError("m2: хеш акта не совпадает с телом", "M2");
+  }
+  if (!verify(assertion.sigM2, bodyHash, existing.to)) {
+    throw new ProtocolError("Подпись контрагента (M2) недействительна", "SIG_M2");
+  }
   if (existing.sigM2) {
     if (!bytesEqual(existing.sigM2, assertion.sigM2)) {
       throw new ProtocolError("m2: конфликт подписей для одного акта", "M2");
@@ -96,10 +111,32 @@ function applyM2(state: State, assertion: M2Assertion): void {
     return;
   }
 
-  finalizeAct(state, { ...existing, sigM2: assertion.sigM2 });
+  finalizeAct(state, { ...existing, hash: bodyHash, sigM2: assertion.sigM2 });
 }
 
-function applyAssertion(state: State, assertion: ClearingAssertion): void {
+function clearingFingerprint(assertion: ClearingAssertion): string {
+  return [
+    assertion.version,
+    assertion.cycle.join(">"),
+    assertion.residual,
+    assertion.appliedAt,
+    bytesToHex(assertion.nonce),
+    assertion.author ? bytesToHex(assertion.author) : "",
+    assertion.sig ? bytesToHex(assertion.sig) : "",
+  ].join("|");
+}
+
+function applyAssertion(state: State, assertion: ClearingAssertion, seenClearing: Map<string, string>): void {
+  const nonceHex = bytesToHex(assertion.nonce);
+  const fingerprint = clearingFingerprint(assertion);
+  const prior = seenClearing.get(nonceHex);
+  if (prior) {
+    if (prior !== fingerprint) {
+      throw new ProtocolError("Повтор клиринга с тем же nonce, но другим телом", "DUPLICATE");
+    }
+    return;
+  }
+  seenClearing.set(nonceHex, fingerprint);
   if (assertion.version !== 1) {
     throw new ProtocolError(`Неподдерживаемая версия ClearingAssertion: ${assertion.version}`, "VERSION");
   }
@@ -176,11 +213,14 @@ function applyAssertion(state: State, assertion: ClearingAssertion): void {
   }
 }
 
-function applyWriteDown(state: State, assertion: WriteDownAssertion): void {
+function applyWriteDown(state: State, assertion: WriteDownAssertion, seenWriteDown: Set<string>): void {
   if (!(assertion.delta > 0) || !Number.isInteger(assertion.delta)) {
     throw new ProtocolError("write_down: delta должен быть целым > 0", "WRITE_DOWN");
   }
   const hashHex = bytesToHex(assertion.actHash);
+  const replayKey = `${hashHex}:${assertion.delta}:${assertion.appliedAt}`;
+  if (seenWriteDown.has(replayKey)) return;
+  seenWriteDown.add(replayKey);
   const act = state.acts.get(hashHex);
   if (!act?.sigM2) {
     throw new ProtocolError("write_down: акт не финализирован", "WRITE_DOWN");
@@ -203,16 +243,19 @@ function applyWriteDown(state: State, assertion: WriteDownAssertion): void {
 
 export function deriveState(history: History): State {
   const state = emptyState();
+  const seenNonce = new Set<string>();
+  const seenClearing = new Map<string, string>();
+  const seenWriteDown = new Set<string>();
 
   for (const event of history) {
     if (event.kind === "act") {
-      ingestAct(state, event.wire);
+      ingestAct(state, event.wire, seenNonce);
     } else if (event.kind === "m2") {
       applyM2(state, event.assertion);
     } else if (event.kind === "clearing") {
-      applyAssertion(state, event.assertion);
+      applyAssertion(state, event.assertion, seenClearing);
     } else if (event.kind === "write_down") {
-      applyWriteDown(state, event.assertion);
+      applyWriteDown(state, event.assertion, seenWriteDown);
     } else {
       const _exhaustive: never = event;
       void _exhaustive;

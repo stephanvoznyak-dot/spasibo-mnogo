@@ -41,9 +41,6 @@ export function verifyAct(act: Act, opts?: { expectTo?: Uint8Array }): { ok: tru
   assertAmount(act.amount);
   if (act.note.length > 280) throw new ProtocolError("Пометка длиннее 280 символов", "NOTE");
   const hash = hashActBody(act);
-  if (!bytesEqual(hash, act.hash)) {
-    act.hash = hash;
-  }
   if (!verify(act.sigM1, hash, act.from)) {
     throw new ProtocolError("Подпись инициатора (M1) недействительна", "SIG_M1");
   }
