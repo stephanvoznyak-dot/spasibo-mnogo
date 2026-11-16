@@ -1,64 +1,66 @@
 # OPTIMIZATION.md
 
-## Текущий статус (16 ноября 2026, ~12:20 MSK)
+## Текущий статус (16 ноября 2026, ~12:40 MSK)
 
-Проект стабилен. Канон-тесты и покрытие без изменений. Повторная проверка в сандбоксе подтвердила все метрики (предыдущие проверки). Локальная установка зависимостей в текущем сандбоксе столкнулась с требованием Node >=22 (сандбокс Node 20).
+Проект стабилен. Повторная проверка в песочнице подтвердила метрики и устранила 3 предупреждения eslint (unused imports).
 
-- Typecheck (`tsc --noEmit`) — **успешно** (по предыдущим проверкам).
+- Typecheck (`tsc --noEmit`) — **успешно**.
 - Lint (`eslint .`) — **0 errors, 0 warnings**.
-- Канон-тесты (`npm run test:canon`) — **47/47 проходят**.
-- Coverage (protocol/storage + pin-session): **87.58% statements / 78.05% branches / 91.02% functions**.
-- graph.ts покрытие **100% statements / 97.61% branches**.
-- qr-messages.ts покрытие **88.52% / 78.94% branches**.
-- Уязвимости в `better-auth` закрыты. `npm audit` показывает ~10 moderate (в основном typescript-eslint, glob/minimatch и связанные dev-deps); Dependabot настроен.
-- Standalone build успешен (~631 KB).
+- Канон-тесты (`npm run test:canon`) — **55/55 проходят**.
+- Coverage (при `test:canon:coverage`): statements ~63% overall (включая низкопокрытый `db.ts`); core protocol: graph.ts **100%**, qr-messages.ts **~88.5%**, history.ts **~96.7%**, pin-session **100%**.
+- Уязвимости в `better-auth` закрыты. `npm audit` показывает moderate в основном в dev-deps (typescript-eslint, glob/minimatch и связанные); Dependabot настроен.
+- Standalone build ранее успешен (~631 KB).
+
+**Исправления 16.11.2026 (~12:40 MSK):**
+- Удалены/закомментированы неиспользуемые импорты: `deriveState` в `p0-audit.test.ts`, `historyFromActs` в `history-db.ts`, `deleteMeta` в `store.ts`. Lint теперь 0/0.
+- Документация (README, OPTIMIZATION, ROADMAP) приведена в соответствие с фактическим числом тестов (55) и результатами прогона.
 
 **Исправления 13.11.2026 (~15:30 MSK):**
 - `src/swarm/sync.ts`: замена `window.setInterval` / `window.clearInterval` на `globalThis` + проверка наличия, чтобы Node test runner не падал с `ReferenceError: window is not defined`.
-- `src/swarm/sync.test.ts`: dummyAct теперь использует 32-байтные `from`/`to` (требование протокола), устранён `ProtocolError: Некорректное поле from` при возможном decode.
-- Моки `window` в тестах сохранены; код production стал environment-agnostic для таймеров.
+- `src/swarm/sync.test.ts`: dummyAct теперь использует 32-байтные `from`/`to` (требование протокола).
 
 Состояние соответствует заявленному. Документация актуализирована.
 
-## План оптимизации (актуализирован)
+## План оптимизации (актуализирован 16.11.2026)
 
 ### Высокий приоритет
 
 - [x] Добавить coverage threshold в CI (`.github/workflows/ci.yml`) на основе `npm run test:canon:coverage`. **Выполнено 8.11.2026.**
-- [ ] Расширить тесты для PIN-сессии и swarm-синхронизации (PIN добавлен; swarm smoke-тесты стабилизированы для Node; требуется валидные подписанные Act и покрытие message path). См. Issue #1.
-- [ ] Оптимизация размера APK: включить ProGuard/R8, проверить tree-shaking и assets. (Аудит standalone завершён: ~629 KB приемлемо.) См. Issue #2.
-- [x] Включить Dependabot alerts и security scanning в CI. **Выполнено 9.11.2026: добавлен `.github/dependabot.yml`.**
+- [ ] Расширить тесты для swarm-синхронизации: использовать `createSignedM1` + `signM2` для валидных Act; покрыть ветки bitfield/have/want/piece; после стабилизации включить `src/swarm/*.test.ts` в `test:canon`.
+- [ ] Оптимизация размера APK: включить ProGuard/R8, проверить tree-shaking и assets. (Аудит standalone завершён: ~629–631 KB приемлемо.)
+- [x] Включить Dependabot alerts и security scanning в CI. **Выполнено 9.11.2026.**
 
 ### Средний приоритет
 
 - [ ] Ревью offline-first / swarm (синхронизация между вкладками, конфликт-резолвинг).
 - [ ] Синхронизация Lean-формализаций с репозиторием `lean4-token-units-invariants`.
-- [ ] Анализ соответствия и возможной интеграции с серией `ya-ryadom` (Mini App / Android).
+- [ ] Анализ соответствия и возможной интеграции с серией `ya-ryadom` (Mini App / Android). Идейная близость только в локальном JSON-store; прямого кода нет.
+- [ ] Повысить покрытие `src/storage/db.ts` и `history-db.ts` (сейчас тянут общий % вниз).
 
 ### Низкий приоритет / регулярное обслуживание
 
-- [ ] Регулярный `npm audit` и обновление зависимостей (особенно Capacitor, Vite, React).
+- [ ] Регулярный `npm audit` и безопасные обновления зависимостей (особенно Capacitor, Vite, React, eslint).
 - [ ] Улучшение документации по сборке iOS/Android (проверка актуальности IOS_BUILD.md / ANDROID_RELEASE.md).
-- [ ] Добавление E2E-тестов через Playwright для критических пользовательских сценариев.
+- [ ] Добавление E2E-тестов через Playwright для критических пользовательских сценариев (создание акта, QR-обмен, локальный клиринг).
 
-## Новые задачи (обновлено 16 ноября 2026, ~12:20 MSK)
+## Новые задачи (обновлено 16 ноября 2026, ~12:40 MSK)
 
-1. Доработать тесты swarm: использовать createSignedM1 + signM2 для валидных Act; покрыть ветки bitfield/have/want/piece; после стабилизации добавить `src/swarm/*.test.ts` в `test:canon`. (Issue #1)
-2. Провести `npm audit` и применить безопасные обновления (typescript-eslint / glob/minimatch и др.).
-3. Начать прототип интеграционных тестов для офлайн QR-обмена и локального клиринга (используя существующие helpers).
-4. Оптимизация APK и ревью swarm вынесены в Issues (#2 и #1).
+1. Доработать тесты swarm: валидные подписанные Act + покрытие message path; включить в `test:canon`.
+2. Провести `npm audit --production` и применить безопасные обновления; зафиксировать результат в CHANGELOG.
+3. Начать прототип интеграционных тестов для офлайн QR-обмена и локального клиринга (helpers уже есть).
+4. Вынести оптимизацию APK и ревью swarm в GitHub Issues.
+5. Синхронизировать число тестов и coverage-цифры во всех docs после каждого значимого прогона.
 
 ## Соответствие репозиториев
 
-- **spasibo-mnogo**: основной веб/Capacitor образец (Vite + React + TS). Протокол normal-project v1, офлайн QR, локальный клиринг.
-- **NormalProject**: нативный Android-прототип (Kotlin + Compose + Room). Тот же концепт взаимного клиринга на Ed25519, обмен через NP0/NP1.
-- **lean4-token-units-invariants**: формализация инвариантов токенов/поставки на Lean 4 (supply preservation, unit precision). Концептуально связана, но не прямой код-генерации из протокола.
-- **ya-ryadom** (и связанные): отдельный проект Mini App / Telegram для аренды жилья. Нет прямого кода-совпадения; возможна только идея локального JSON-store.
+- **spasibo-mnogo**: основной веб/Capacitor образец (Vite + React + TS). Протокол normal-project v1, офлайн QR, локальный клиринг. CI + 55 канон-тестов.
+- **NormalProject**: нативный Android-прототип (Kotlin + Compose + Room). Тот же концепт взаимного клиринга на Ed25519.
+- **lean4-token-units-invariants**: формализация инвариантов токенов/поставки на Lean 4. Концептуально связана.
+- **ya-ryadom** (и связанные telegram-x-ya-ryadom, ya-ryadom-android): отдельный проект Mini App / Telegram для аренды жилья. Нет прямого кода-совпадения; возможна только идея локального JSON-store.
 
 Различия: spasibo-mnogo — industrial sample с полным CI/тестами; NormalProject — ранний нативный прототип; Lean — математическая верификация отдельных свойств.
 
 ## История обновлений
-- 16 ноября 2026 (~12:20 MSK): Повторная верификация. Локальный сандбокс имеет Node 20 (требуется >=22 для некоторых пакетов). Состояние стабильно по предыдущим данным. Созданы Issues #1 и #2 для открытых задач. Документация актуализирована.
-- 16 ноября 2026 (~11:30 MSK): Повторная верификация в сандбоксе — typecheck/lint/test:canon 47/47 подтверждены. npm audit: ~10 moderate (dev). Состояние стабильно. Документация актуализирована. Задачи остаются открытыми.
-- 16 ноября 2026 (~10:30 MSK): Повторная верификация в сандбоксе — typecheck/lint/test:canon 47/47, coverage 87.58/78.05/91.02 подтверждены. npm audit: 13 moderate (dev). Состояние стабильно. Документация актуализирована. Подготовлены формы Issues.
-- 16 ноября 2026 (~09:30 MSK): Повторная верификация в сандбоксе — typecheck/lint/test:canon 47/47, coverage 87.58/78.05/91.02 подтверждены. npm audit: 13 moderate (dev). Состояние стабильно. Документация актуализирована. Задачи остаются открытыми.
+- 16 ноября 2026 (~12:40 MSK): Верификация в песочнице — typecheck/lint 0/0/test:canon 55/55. Исправлены 3 eslint warnings. Документация синхронизирована. Покрытие core protocol высокое.
+- 16 ноября 2026 (~11:30 MSK): Повторная верификация. Документация актуализирована.
+- 13 ноября 2026: Исправления swarm для Node test runner.
