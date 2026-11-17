@@ -1,44 +1,83 @@
-# Спасибо много (Spasibo Mnogo)
+# Спасибо много / Normal Project
 
-Личный журнал обязательств на базе протокола Normal Project (v1).  
-BIP-39 мнемоника, Ed25519 подписи, QR-обмен актами M1/M2, локальный клиринг циклов, Capacitor для Android/iOS.
+Промышленный образец децентрализованного **личного** журнала взаимных обязательств.  
+Не блокчейн, не кошелёк, не платёжная система.
 
-**Репозиторий:** https://github.com/stephanvoznyak-dot/spasibo-mnogo  
-**Протокол:** см. [PROTOCOL.md](PROTOCOL.md)  
-**Версия приложения:** 1.3.17 (см. [CHANGELOG.md](CHANGELOG.md))
+**Протокол: normal-project v1.** Не совместим с EOS Specification v4.1  
+(нет JCS, SLIP-0010, PAL). Не выдавайте записи журнала за SharedRecord EOS.
 
-> Несовместимо с EOS. Самостоятельный протокол normal-project v1.
+Репозиторий: [github.com/stephanvoznyak-dot/spasibo-mnogo](https://github.com/stephanvoznyak-dot/spasibo-mnogo)  
+Релизы (APK / HTML / ZIP / Xcode): [releases](https://github.com/stephanvoznyak-dot/spasibo-mnogo/releases)  
+Канал: [t.me/+buaSHWKuVTY2ZmNi](https://t.me/+buaSHWKuVTY2ZmNi)  
+Автор концепции: **Ларионов Пётр** · +7 903 606-00-06 · [@Peterlarionov](https://t.me/Peterlarionov)
 
-## Текущее состояние (на 17.11.2026)
+Версия **1.3.17** (17 ноября 2026).
 
-- **Протокол и криптография:** реализованы и стабильны (`src/protocol/`, `src/crypto/`). Источник истины — append-only History. Клиринг — локальная гипотеза узла.
-- **Тесты протокола (`npm run test:canon`):** 48/48 проходят.
-- **UI / хранилище:** `src/ui/store.ts` и `src/storage/history-db.ts` восстановлены из рабочего коммита 06d5733. `npm run typecheck` проходит без ошибок.
-- **Сборка:** Capacitor + Android/iOS. Есть GitHub Actions для CI и релизов. Debug-APK не для продакшена (см. [ANDROID_RELEASE.md](ANDROID_RELEASE.md)).
-- **Зависимости:** 10 moderate уязвимостей, в основном в dev-инструментах (c8, eslint, glob). Production-зависимости чисты. Рекомендуется периодический `npm audit`.
-- **Документация:** README, OPTIMIZATION.md, ROADMAP.md синхронизированы с текущим состоянием.
+## Состояние проекта
 
-Проект находится в стадии стабилизации протокола и подготовки к release-сборкам и приёмке на физических устройствах.
+- Основной промышленный образец концепта Normal Project в стеке Vite + React + Capacitor.
+- Протокол реализован: BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR-обмен.
+- Связан с нативным Android-прототипом в репозитории [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и формализациями на Lean 4 ([lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants)).
+- Typecheck (`tsc --noEmit`) проходит. Lint: **0 errors, 0 warnings**.
+- Канон-тесты (`npm run test:canon`) — **33/33 проходят**.
+- Уязвимости в better-auth закрыты обновлением до 1.7.14 (0 vulnerabilities).
 
-## Быстрый старт
+**Последняя проверка (16.11.2026):** typecheck успешен, test:canon 33/33. npm audit в этом спринте не пересматривался.
 
-```bash
-git clone https://github.com/stephanvoznyak-dot/spasibo-mnogo.git
-cd spasibo-mnogo
-npm install --legacy-peer-deps
-npm run test:canon
-npm run typecheck
-npm run dev
+## Скачать
+
+| Файл | |
+|------|--|
+| Android APK | [normal-project.apk](https://github.com/stephanvoznyak-dot/spasibo-mnogo/releases/latest/download/normal-project.apk) |
+| Офлайн HTML | [normal-project.html](https://github.com/stephanvoznyak-dot/spasibo-mnogo/releases/latest/download/normal-project.html) |
+| Исходники ZIP | [normal-project-src.zip](https://github.com/stephanvoznyak-dot/spasibo-mnogo/releases/latest/download/normal-project-src.zip) |
+| Xcode / iOS | [normal-project-ios.zip](https://github.com/stephanvoznyak-dot/spasibo-mnogo/releases/latest/download/normal-project-ios.zip) · [IOS_BUILD.md](IOS_BUILD.md) |
+
+В приложении кнопки **Скачать** на экране входа, на главной и в «Ещё».
+
+## Что умеет
+
+- Личность BIP-39 (12/24) → Ed25519
+- Двусторонние акты (M1 + M2) как события History
+- Обмен офлайн через QR
+- **Локальный** клиринг циклов (подписанная гипотеза узла; не консенсус сторон)
+- Рой между вкладками одного origin
+- Полностью офлайн после загрузки
+- Лаборатория: учебные контакты, 18-12-8, тесты F01–F08 и Canon 2.2
+
+## История (источник истины)
+
+```
+act → m2 → clearing(author-signed) | write_down(migration)
+State = deriveState(History)
 ```
 
-Для Android: см. [ANDROID_RELEASE.md](ANDROID_RELEASE.md).  
-Для iOS: см. [IOS_BUILD.md](IOS_BUILD.md).
+Клиринг в UI: «локальный, не подтверждён контрагентами».
 
-## Связанные проекты
-- [ya-ryadom](https://github.com/stephanvoznyak-dot/ya-ryadom) — Mini App + Telegram-клиент
-- [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) — ранний Android-прототип
-- [lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants) — формальные доказательства на Lean 4
+## Запуск
 
-## Лицензия и отказ от ответственности
+```
+npm install --legacy-peer-deps
+npm run restore:store
+npm run dev
+npm run test:canon   # 33 теста
+```
 
-Прототип. Не использовать в production без независимого аудита.
+## Сборки
+
+- HTML: `npm run build:standalone` → `public/downloads/normal-project.html`
+- Android: см. [ANDROID_RELEASE.md](ANDROID_RELEASE.md) — debug APK не для магазина
+- iOS / Xcode: `npm run setup:ios` затем `npx cap open ios` — [IOS_BUILD.md](IOS_BUILD.md)
+- Пакет загрузок: `npm run pack:downloads`
+
+## Документы
+
+- [PROTOCOL.md](PROTOCOL.md) — форматы, History, локальный клиринг
+- [SECURITY.md](SECURITY.md)
+- [CHANGELOG.md](CHANGELOG.md)
+- [OPTIMIZATION.md](OPTIMIZATION.md) — план оптимизации
+- [ROADMAP.md](ROADMAP.md)
+
+## Отказ от ответственности
+
+Промышленный образец. Не финансовый продукт. Ответственность за сид-фразу и данные — на пользователе.

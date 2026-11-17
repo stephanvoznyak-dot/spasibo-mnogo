@@ -81,6 +81,50 @@ export function appendM2(
   return { history: next, state: deriveState(next), added: true, assertion };
 }
 
+/** Accept one event only if deriveState stays valid. Does not mutate `history`. */
+export function acceptEvent(history: History, ev: HistoryEvent): { history: History; added: boolean } {
+  if (ev.kind === "act") {
+    verifyAct(ev.wire);
+    const id = bytesToHex(hashActBody(ev.wire));
+    if (history.some((e) => e.kind === "act" && bytesToHex(hashActBody(e.wire)) === id)) {
+      return { history, added: false };
+    }
+  } else if (ev.kind === "m2") {
+    const id = bytesToHex(ev.assertion.actHash);
+    const prev = history.find((e) => e.kind === "m2" && bytesToHex(e.assertion.actHash) === id);
+    if (prev && prev.kind === "m2") {
+      if (!bytesEqual(prev.assertion.sigM2, ev.assertion.sigM2)) {
+        throw new ProtocolError("m2: конфликт подписей для одного акта", "M2");
+      }
+      return { history, added: false };
+    }
+  } else if (ev.kind === "clearing") {
+    const id = bytesToHex(ev.assertion.nonce);
+    const prev = history.find((e) => e.kind === "clearing" && bytesToHex(e.assertion.nonce) === id);
+    if (prev && prev.kind === "clearing") {
+      const same =
+        prev.assertion.residual === ev.assertion.residual &&
+        prev.assertion.appliedAt === ev.assertion.appliedAt &&
+        prev.assertion.cycle.join(">") === ev.assertion.cycle.join(">");
+      if (!same) {
+        throw new ProtocolError("Повтор клиринга с тем же nonce, но другим телом", "DUPLICATE");
+      }
+      return { history, added: false };
+    }
+  } else if (ev.kind === "write_down") {
+    const id = `${bytesToHex(ev.assertion.actHash)}:${ev.assertion.delta}:${ev.assertion.appliedAt}`;
+    const prev = history.some(
+      (e) =>
+        e.kind === "write_down" &&
+        `${bytesToHex(e.assertion.actHash)}:${e.assertion.delta}:${e.assertion.appliedAt}` === id,
+    );
+    if (prev) return { history, added: false };
+  }
+  const next: History = [...history, ev];
+  deriveState(next);
+  return { history: next, added: true };
+}
+
 export function appendClearing(
   history: History,
   cycle: ClearingCycle,
