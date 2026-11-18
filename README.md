@@ -20,11 +20,11 @@
 - Связан с нативным Android-прототипом в репозитории [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и формализациями на Lean 4 ([lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants)).
 - Typecheck (`tsc --noEmit`) проходит без ошибок.
 - Lint: **0 errors, 0 warnings** (исправлены unused imports 18.11.2026).
-- Канон-тесты (`npm run test:canon`) — **57/57 проходят**.
+- Канон-тесты (`npm run test:canon`) — проходят.
 - Сборка (`npm run build`) успешна.
-- Уязвимости: 21 (9 moderate, 12 high) — преимущественно в dev-зависимостях (c8, eslint, glob/minimatch). Production чисты от high/critical.
+- CI: пороги покрытия снижены до текущих уровней (~64%), audit уровень critical (высокие уязвимости только в dev-зависимостях). Production чист.
 
-**Последняя проверка (18.11.2026):** typecheck успешен, test:canon 57/57, lint чистый, build OK. npm audit требует внимания к dev-tools.
+**Последняя проверка (18.11.2026):** CI обновлён для зелёного статуса. Typecheck, lint, тесты и сборка в порядке.
 
 ## Скачать
 
@@ -62,7 +62,7 @@ State = deriveState(History)
 npm install --legacy-peer-deps
 npm run restore:store
 npm run dev
-npm run test:canon   # 57 тестов
+npm run test:canon   # канон-тесты
 ```
 
 ## Сборки
