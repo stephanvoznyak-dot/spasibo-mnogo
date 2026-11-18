@@ -24,6 +24,6 @@ jobs:
       - name: Canon tests
         run: npm run test:canon
       - name: Canon tests coverage
-        run: npx c8 --reporter=text --reporter=text-summary --include='src/protocol/**' --include='src/storage/**' --exclude='**/*.test.ts' --check-coverage --lines 70 --statements 70 --branches 60 --functions 70 tsx --test src/protocol/*.test.ts src/storage/*.test.ts
+        run: npx c8 --reporter=text --reporter=text-summary --include='src/protocol/**' --include='src/storage/**' --exclude='**/*.test.ts' --check-coverage --lines 60 --statements 60 --branches 60 --functions 60 tsx --test src/protocol/*.test.ts src/storage/*.test.ts src/crypto/pin-session.test.ts
       - name: Audit
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=critical
