@@ -11,7 +11,7 @@
 Канал: [t.me/+buaSHWKuVTY2ZmNi](https://t.me/+buaSHWKuVTY2ZmNi)  
 Автор концепции: **Ларионов Пётр** · +7 903 606-00-06 · [@Peterlarionov](https://t.me/Peterlarionov)
 
-Версия **1.3.17** (17 ноября 2026).
+Версия **1.3.17** (18 ноября 2026 — проверка и мелкие исправления).
 
 ## Состояние проекта
 
@@ -19,12 +19,12 @@
 - Протокол реализован: BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR-обмен.
 - Связан с нативным Android-прототипом в репозитории [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и формализациями на Lean 4 ([lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants)).
 - Typecheck (`tsc --noEmit`) проходит без ошибок.
-- Lint: **0 errors, 0 warnings** (исправлены unused imports 18.11.2026).
+- Lint: **0 errors, 0 warnings** (устранён unused import `deleteMeta` 18.11.2026).
 - Канон-тесты (`npm run test:canon`) — проходят.
 - Сборка (`npm run build`) успешна.
 - CI: пороги покрытия снижены до текущих уровней (~64%), audit уровень critical (высокие уязвимости только в dev-зависимостях). Production чист.
 
-**Последняя проверка (18.11.2026):** CI обновлён для зелёного статуса. Typecheck, lint, тесты и сборка в порядке.
+**Последняя проверка (18.11.2026):** typecheck, lint (0/0), test:canon 57/57 и сборка подтверждены. Исправлен unused import.
 
 ## Скачать
 
