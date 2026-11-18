@@ -18,11 +18,13 @@
 - Основной промышленный образец концепта Normal Project в стеке Vite + React + Capacitor.
 - Протокол реализован: BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR-обмен.
 - Связан с нативным Android-прототипом в репозитории [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и формализациями на Lean 4 ([lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants)).
-- Typecheck (`tsc --noEmit`) проходит. Lint: **0 errors, 0 warnings**.
-- Канон-тесты (`npm run test:canon`) — **33/33 проходят**.
-- Уязвимости в better-auth закрыты обновлением до 1.7.14 (0 vulnerabilities).
+- Typecheck (`tsc --noEmit`) проходит без ошибок.
+- Lint: **0 errors, 0 warnings** (исправлены unused imports 18.11.2026).
+- Канон-тесты (`npm run test:canon`) — **57/57 проходят**.
+- Сборка (`npm run build`) успешна.
+- Уязвимости: 21 (9 moderate, 12 high) — преимущественно в dev-зависимостях (c8, eslint, glob/minimatch). Production чисты от high/critical.
 
-**Последняя проверка (16.11.2026):** typecheck успешен, test:canon 33/33. npm audit в этом спринте не пересматривался.
+**Последняя проверка (18.11.2026):** typecheck успешен, test:canon 57/57, lint чистый, build OK. npm audit требует внимания к dev-tools.
 
 ## Скачать
 
@@ -60,7 +62,7 @@ State = deriveState(History)
 npm install --legacy-peer-deps
 npm run restore:store
 npm run dev
-npm run test:canon   # 33 теста
+npm run test:canon   # 57 тестов
 ```
 
 ## Сборки
