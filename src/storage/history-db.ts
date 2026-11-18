@@ -4,7 +4,7 @@
  */
 import { bytesToHex, hexToBytes } from "@/crypto/bytes";
 import { verifyAct } from "@/protocol/act";
-import { acceptEvent, deriveState, historyFromActs } from "@/protocol/history";
+import { acceptEvent, deriveState } from "@/protocol/history";
 import { decodeAct, encodeAct, hashActBody } from "@/protocol/serialization";
 import type { HashHex, History, HistoryEvent, State } from "@/protocol/types";
 import { ProtocolError } from "@/protocol/types";
