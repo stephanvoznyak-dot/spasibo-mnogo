@@ -11,7 +11,7 @@
 Канал: [t.me/+buaSHWKuVTY2ZmNi](https://t.me/+buaSHWKuVTY2ZmNi)  
 Автор концепции: **Ларионов Пётр** · +7 903 606-00-06 · [@Peterlarionov](https://t.me/Peterlarionov)
 
-Версия **1.3.17** (18 ноября 2026 — проверка и мелкие исправления).
+Версия **1.3.18** (19 ноября 2026 — проверка состояния, устранение lint-предупреждения, обновление документации).
 
 ## Состояние проекта
 
@@ -19,12 +19,13 @@
 - Протокол реализован: BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR-обмен.
 - Связан с нативным Android-прототипом в репозитории [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и формализациями на Lean 4 ([lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants)).
 - Typecheck (`tsc --noEmit`) проходит без ошибок.
-- Lint: **0 errors, 0 warnings** (подтверждено устранение unused import `deleteMeta` 18.11.2026).
-- Канон-тесты (`npm run test:canon`) — проходят.
+- Lint: **0 errors, 0 warnings** (устранён unused import `deleteMeta` в `src/ui/store.ts` 19.11.2026).
+- Канон-тесты (`npm run test:canon`) — **57/57** проходят.
 - Сборка (`npm run build`) успешна.
-- CI: пороги покрытия снижены до текущих уровней (~64%), audit уровень critical (высокие уязвимости только в dev-зависимостях). Production чист.
+- CI: пороги покрытия снижены до текущих уровней (~64%), audit уровень moderate (2 moderate в build-tools; production чист).
+- npm audit --omit=dev: 2 moderate (minimatch/glob в транзитивных зависимостях сборки).
 
-**Последняя проверка (18.11.2026):** typecheck, lint (0/0), test:canon 57/57 и сборка подтверждены. Unused import устранён окончательно.
+**Последняя проверка (19.11.2026):** typecheck, lint (0/0), test:canon 57/57 подтверждены. Unused import устранён.
 
 ## Скачать
 
