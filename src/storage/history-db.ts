@@ -5,7 +5,7 @@
 import { bytesToHex, hexToBytes } from "@/crypto/bytes";
 import { verifyAct } from "@/protocol/act";
 import { acceptEvent, deriveState } from "@/protocol/history";
-import { decodeAct, encodeAct, hashActBody } from "@/protocol/serialization";
+import { decodeAct, encodeAct } from "@/protocol/serialization";
 import type { HashHex, History, HistoryEvent, State } from "@/protocol/types";
 import { ProtocolError } from "@/protocol/types";
 import { loadActs } from "./db";
@@ -354,82 +354,65 @@ export function exportHistoryJson(history: History): string {
 }
 
 export function importHistoryJson(json: string): History {
-  const data = JSON.parse(json) as { format?: string; events?: Array<Record<string, unknown>> };
-  if (data.format === "history" && Array.isArray(data.events)) {
-    const history: History = [];
-    for (const row of data.events) {
-      if (row.kind === "act" && typeof row.wireHex === "string") {
-        const act = decodeAct(hexToBytes(row.wireHex));
-        verifyAct(act);
-        history.push({ kind: "act", wire: act });
-      } else if (row.kind === "m2") {
-        history.push({
-          kind: "m2",
-          assertion: {
-            actHash: hexToBytes(String(row.actHashHex)),
-            sigM2: hexToBytes(String(row.sigM2Hex)),
-            appliedAt: Number(row.appliedAt) || Date.now(),
-          },
-        });
-      } else if (row.kind === "write_down") {
-        history.push({
-          kind: "write_down",
-          assertion: {
-            actHash: hexToBytes(String(row.actHashHex)),
-            delta: Number(row.delta),
-            appliedAt: Number(row.appliedAt) || Date.now(),
-          },
-        });
-      } else if (row.kind === "clearing") {
-        history.push({
-          kind: "clearing",
-          assertion: {
-            version: 1,
-            cycle: row.cycle as string[],
-            residual: Number(row.residual),
-            appliedAt: Number(row.appliedAt) || Date.now(),
-            nonce: hexToBytes(String(row.nonceHex)),
-            prevHash: row.prevHashHex ? hexToBytes(String(row.prevHashHex)) : null,
-            author: row.authorHex ? hexToBytes(String(row.authorHex)) : null,
-            sig: row.sigHex ? hexToBytes(String(row.sigHex)) : null,
-          },
-        });
-      }
-    }
-    deriveState(history);
-    return dedupeImportedHistory(history);
+  let data: { proto?: string; format?: string; events?: Array<Record<string, unknown>> };
+  try {
+    data = JSON.parse(json) as { proto?: string; format?: string; events?: Array<Record<string, unknown>> };
+  } catch {
+    throw new ProtocolError("Файл журнала не читается", "IMPORT");
   }
-  throw new ProtocolError("Неизвестный формат экспорта (ожидается history v2)", "IMPORT");
+  if (data.proto && data.proto !== "normal-project") {
+    throw new ProtocolError("Чужой протокол в файле журнала", "IMPORT");
+  }
+  if (data.format !== "history" || !Array.isArray(data.events)) {
+    throw new ProtocolError("Неизвестный формат экспорта (ожидается history v2)", "IMPORT");
+  }
+  let history: History = [];
+  for (const row of data.events) {
+    history = acceptEvent(history, eventFromImportRow(row)).history;
+  }
+  return history;
 }
 
-function dedupeImportedHistory(history: History): History {
-  const out: History = [];
-  const acts = new Set<string>();
-  const m2s = new Set<string>();
-  const clearings = new Set<string>();
-  const writes = new Set<string>();
-  for (const ev of history) {
-    if (ev.kind === "act") {
-      const id = bytesToHex(hashActBody(ev.wire));
-      if (acts.has(id)) continue;
-      acts.add(id);
-      out.push(ev);
-    } else if (ev.kind === "m2") {
-      const id = bytesToHex(ev.assertion.actHash);
-      if (m2s.has(id)) continue;
-      m2s.add(id);
-      out.push(ev);
-    } else if (ev.kind === "clearing") {
-      const id = bytesToHex(ev.assertion.nonce);
-      if (clearings.has(id)) continue;
-      clearings.add(id);
-      out.push(ev);
-    } else {
-      const id = `${bytesToHex(ev.assertion.actHash)}:${ev.assertion.delta}:${ev.assertion.appliedAt}`;
-      if (writes.has(id)) continue;
-      writes.add(id);
-      out.push(ev);
-    }
+function eventFromImportRow(row: Record<string, unknown>): HistoryEvent {
+  if (row.kind === "act" && typeof row.wireHex === "string") {
+    const act = decodeAct(hexToBytes(row.wireHex));
+    verifyAct(act);
+    return { kind: "act", wire: act };
   }
-  return out;
+  if (row.kind === "m2") {
+    return {
+      kind: "m2",
+      assertion: {
+        actHash: hexToBytes(String(row.actHashHex)),
+        sigM2: hexToBytes(String(row.sigM2Hex)),
+        appliedAt: Number(row.appliedAt) || Date.now(),
+      },
+    };
+  }
+  if (row.kind === "write_down") {
+    return {
+      kind: "write_down",
+      assertion: {
+        actHash: hexToBytes(String(row.actHashHex)),
+        delta: Number(row.delta),
+        appliedAt: Number(row.appliedAt) || Date.now(),
+      },
+    };
+  }
+  if (row.kind === "clearing") {
+    return {
+      kind: "clearing",
+      assertion: {
+        version: 1,
+        cycle: row.cycle as string[],
+        residual: Number(row.residual),
+        appliedAt: Number(row.appliedAt) || Date.now(),
+        nonce: hexToBytes(String(row.nonceHex)),
+        prevHash: row.prevHashHex ? hexToBytes(String(row.prevHashHex)) : null,
+        author: row.authorHex ? hexToBytes(String(row.authorHex)) : null,
+        sig: row.sigHex ? hexToBytes(String(row.sigHex)) : null,
+      },
+    };
+  }
+  throw new ProtocolError("Неизвестное событие в файле журнала", "IMPORT");
 }

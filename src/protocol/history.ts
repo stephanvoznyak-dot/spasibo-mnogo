@@ -29,7 +29,7 @@ export const MAX_CYCLE_LEN = 7;
 export function historyActHashes(history: History): Set<HashHex> {
   const set = new Set<HashHex>();
   for (const ev of history) {
-    if (ev.kind === "act") set.add(bytesToHex(ev.wire.hash));
+    if (ev.kind === "act") set.add(bytesToHex(hashActBody(ev.wire)));
   }
   return set;
 }
@@ -39,18 +39,18 @@ export function appendAct(
   act: Act,
   opts?: { allowDuplicate?: boolean },
 ): { history: History; state: State; added: boolean } {
-  verifyAct(act);
-  const hashHex = bytesToHex(act.hash);
+  const { hash } = verifyAct(act);
+  const hashHex = bytesToHex(hash);
   if (historyActHashes(history).has(hashHex)) {
     if (opts?.allowDuplicate === false) {
       throw new ProtocolError(`Акт ${hashHex.slice(0, 12)} уже есть в журнале`, "DUPLICATE");
     }
     return { history, state: deriveState(history), added: false };
   }
-  const wire: Act = act.sigM2 ? { ...act, sigM2: null } : act;
+  const wire: Act = { ...act, hash, sigM2: null };
   const next: History = [...history, { kind: "act", wire }];
   if (act.sigM2) {
-    next.push({ kind: "m2", assertion: makeM2Assertion(act.hash, act.sigM2) });
+    next.push({ kind: "m2", assertion: makeM2Assertion(hash, act.sigM2) });
   }
   return { history: next, state: deriveState(next), added: true };
 }
@@ -84,11 +84,18 @@ export function appendM2(
 /** Accept one event only if deriveState stays valid. Does not mutate `history`. */
 export function acceptEvent(history: History, ev: HistoryEvent): { history: History; added: boolean } {
   if (ev.kind === "act") {
-    verifyAct(ev.wire);
-    const id = bytesToHex(hashActBody(ev.wire));
+    const { hash } = verifyAct(ev.wire);
+    const id = bytesToHex(hash);
     if (history.some((e) => e.kind === "act" && bytesToHex(hashActBody(e.wire)) === id)) {
       return { history, added: false };
     }
+    const wire: Act = { ...ev.wire, hash, sigM2: null };
+    const next: History = [...history, { kind: "act", wire }];
+    if (ev.wire.sigM2) {
+      next.push({ kind: "m2", assertion: makeM2Assertion(hash, ev.wire.sigM2) });
+    }
+    deriveState(next);
+    return { history: next, added: true };
   } else if (ev.kind === "m2") {
     const id = bytesToHex(ev.assertion.actHash);
     const prev = history.find((e) => e.kind === "m2" && bytesToHex(e.assertion.actHash) === id);
@@ -150,14 +157,14 @@ export function historyFromActs(acts: Act[]): History {
   const events: HistoryEvent[] = [];
   const seen = new Set<HashHex>();
   for (const act of acts) {
-    verifyAct(act);
-    const h = bytesToHex(act.hash);
+    const { hash } = verifyAct(act);
+    const h = bytesToHex(hash);
     if (seen.has(h)) continue;
     seen.add(h);
-    const wire: Act = act.sigM2 ? { ...act, sigM2: null } : act;
+    const wire: Act = { ...act, hash, sigM2: null };
     events.push({ kind: "act", wire });
     if (act.sigM2) {
-      events.push({ kind: "m2", assertion: makeM2Assertion(act.hash, act.sigM2) });
+      events.push({ kind: "m2", assertion: makeM2Assertion(hash, act.sigM2) });
     }
   }
   return events;

@@ -89,7 +89,7 @@ export function describeAct(act: Act): {
   hasM2: boolean;
 } {
   return {
-    hashHex: bytesToHex(act.hash),
+    hashHex: bytesToHex(hashActBody(act)),
     fromHex: bytesToHex(act.from),
     toHex: bytesToHex(act.to),
     fromFp: fingerprintOf(act.from),

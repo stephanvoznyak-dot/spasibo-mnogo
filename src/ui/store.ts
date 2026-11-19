@@ -8,6 +8,7 @@ import { applyCycle, findCycles } from "@/protocol/clearing";
 import { appendClearing, appendM2, findCycles as findCyclesHistory, historyFromActs } from "@/protocol/history";
 import { counterparties } from "@/protocol/graph";
 import { decodeManualFallback } from "@/protocol/qr-messages";
+import { hashActBody } from "@/protocol/serialization";
 import type { Act, ClearingCycle, ClearingResult, Contact, History, LedgerEntry } from "@/protocol/types";
 import {
   exportLedgerJson,
@@ -25,6 +26,7 @@ import {
   wipeUserData,
   loadMeta,
   saveMeta,
+  deleteMeta,
   type AppSettings,
 } from "@/storage/db";
 import {
@@ -257,7 +259,7 @@ export const useApp = create<AppState>((set, get) => ({
     if (type === "act-final" && act.sigM2) {
       const hashHex = bytesToHex(act.hash);
       let history = get().history;
-      if (!history.some((e) => e.kind === "act" && bytesToHex(e.wire.hash) === hashHex)) {
+      if (!history.some((e) => e.kind === "act" && bytesToHex(hashActBody(e.wire)) === hashHex)) {
         await appendHistoryEvent({ kind: "act", wire: { ...act, sigM2: null } });
         history = [...history, { kind: "act", wire: { ...act, sigM2: null } }];
       }
@@ -279,7 +281,7 @@ export const useApp = create<AppState>((set, get) => ({
     const signed = signM2(act, identity.secretKey, identity.publicKey);
     let history = get().history;
     const hashHex = bytesToHex(signed.hash);
-    if (!history.some((e) => e.kind === "act" && bytesToHex(e.wire.hash) === hashHex)) {
+    if (!history.some((e) => e.kind === "act" && bytesToHex(hashActBody(e.wire)) === hashHex)) {
       await appendHistoryEvent({ kind: "act", wire: { ...signed, sigM2: null } });
       history = [...history, { kind: "act", wire: { ...signed, sigM2: null } }];
     }
@@ -393,7 +395,13 @@ export const useApp = create<AppState>((set, get) => ({
   },
 
   importJson: async (json) => {
+    let format: string | undefined;
     try {
+      format = (JSON.parse(json) as { format?: string }).format;
+    } catch {
+      format = undefined;
+    }
+    if (format === "history") {
       const history = importHistoryJson(json);
       await saveHistory(history);
       const { deriveState } = await import("@/protocol/derive");
@@ -401,8 +409,6 @@ export const useApp = create<AppState>((set, get) => ({
       if (DUAL_WRITE_LEGACY) await putActs(entries);
       set({ history, entries });
       return;
-    } catch {
-      /* legacy */
     }
     const imported = await importLedgerJson(json);
     const history = historyFromActs(imported.map((e) => e.act));
@@ -629,7 +635,7 @@ function attachSwarm(
         try {
           let history = get().history;
           const hashHex = bytesToHex(act.hash);
-          if (!history.some((e) => e.kind === "act" && bytesToHex(e.wire.hash) === hashHex)) {
+          if (!history.some((e) => e.kind === "act" && bytesToHex(hashActBody(e.wire)) === hashHex)) {
             await appendHistoryEvent({ kind: "act", wire: { ...act, sigM2: null } });
             history = [...history, { kind: "act", wire: { ...act, sigM2: null } }];
           }

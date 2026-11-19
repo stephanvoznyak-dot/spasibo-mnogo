@@ -6,6 +6,7 @@ import { deriveKeypair } from "../crypto/keys.ts";
 import { sign } from "../crypto/signature.ts";
 import { exportHistoryJson, importHistoryJson } from "../storage/history-db.ts";
 import { createSignedM1, signM2, verifyAct } from "./act.ts";
+import { deriveState } from "./derive.ts";
 import { appendAct, appendClearing, appendM2, acceptEvent, findCycles, historyFromActs, stateOf } from "./history.ts";
 import { decodeQrMessage, encodeQrMessage } from "./qr-messages.ts";
 import { hashActBody } from "./serialization.ts";
@@ -240,6 +241,40 @@ describe("P0 protocol audit", () => {
     const replay = acceptEvent(history, { kind: "act", wire: first });
     assert.equal(replay.added, false);
     assert.equal(replay.history, history);
+  });
+
+  it("stores the body hash, not a substituted hash field", () => {
+    const a = agent();
+    const b = agent();
+    const act = createSignedM1({
+      fromSecret: a.secretKey,
+      fromPublic: a.publicKey,
+      to: b.publicKey,
+      amount: 11,
+    });
+    const forged = { ...act, hash: new Uint8Array(32) };
+    const first = appendAct([], forged);
+    assert.equal(first.added, true);
+    const real = bytesToHex(hashActBody(act));
+    assert.equal(bytesToHex(first.history[0]!.kind === "act" ? first.history[0].wire.hash : new Uint8Array()), real);
+    const again = appendAct(first.history, act);
+    assert.equal(again.added, false);
+    assert.equal(again.history.length, 1);
+    const viaAccept = acceptEvent(first.history, { kind: "act", wire: forged });
+    assert.equal(viaAccept.added, false);
+    assert.equal(viaAccept.history, first.history);
+  });
+
+  it("rejects a foreign protocol and an unknown event without returning a journal", () => {
+    const a = agent();
+    const b = agent();
+    const json = exportHistoryJson(appendAct([], finalAct(a, b, 3)).history);
+    const parsed = JSON.parse(json) as { proto: string; events: unknown[] };
+    parsed.proto = "eos";
+    assert.throws(() => importHistoryJson(JSON.stringify(parsed)), (err: unknown) => err instanceof ProtocolError && err.code === "IMPORT");
+    parsed.proto = "normal-project";
+    parsed.events.push({ kind: "payment", amount: 1 });
+    assert.throws(() => importHistoryJson(JSON.stringify(parsed)), (err: unknown) => err instanceof ProtocolError && err.code === "IMPORT");
   });
 
   it("rejects a tampered export and does not return a history", () => {
