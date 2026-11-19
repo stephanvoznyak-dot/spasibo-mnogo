@@ -25,7 +25,6 @@ import {
   wipeUserData,
   loadMeta,
   saveMeta,
-  deleteMeta,
   type AppSettings,
 } from "@/storage/db";
 import {
