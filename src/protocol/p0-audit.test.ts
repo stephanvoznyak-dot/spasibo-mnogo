@@ -277,6 +277,18 @@ describe("P0 protocol audit", () => {
     assert.throws(() => importHistoryJson(JSON.stringify(parsed)), (err: unknown) => err instanceof ProtocolError && err.code === "IMPORT");
   });
 
+  it("expands one finalized act into an act event and an M2 event", () => {
+    const a = agent();
+    const b = agent();
+    const act = finalAct(a, b, 3);
+    const accepted = acceptEvent([], { kind: "act", wire: act });
+    assert.equal(accepted.added, true);
+    assert.equal(accepted.history.length, 2);
+    assert.equal(accepted.history[0]?.kind, "act");
+    assert.equal(accepted.history[1]?.kind, "m2");
+    assert.equal(stateOf(accepted.history).remaining.get(bytesToHex(act.hash)), 3);
+  });
+
   it("rejects a tampered export and does not return a history", () => {
     const a = agent();
     const b = agent();

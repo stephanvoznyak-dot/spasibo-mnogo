@@ -11,21 +11,18 @@
 Канал: [t.me/+buaSHWKuVTY2ZmNi](https://t.me/+buaSHWKuVTY2ZmNi)  
 Автор концепции: **Ларионов Пётр** · +7 903 606-00-06 · [@Peterlarionov](https://t.me/Peterlarionov)
 
-Версия **1.3.18** (19 ноября 2026 — проверка состояния, устранение lint-предупреждения, обновление документации).
+Версия **1.3.18** (21 ноября 2026).
 
 ## Состояние проекта
 
 - Основной промышленный образец концепта Normal Project в стеке Vite + React + Capacitor.
 - Протокол реализован: BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR-обмен.
 - Связан с нативным Android-прототипом в репозитории [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и формализациями на Lean 4 ([lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants)).
-- Typecheck (`tsc --noEmit`) проходит без ошибок.
-- Lint: **0 errors, 0 warnings** (устранён unused import `deleteMeta` в `src/ui/store.ts` 19.11.2026).
-- Канон-тесты (`npm run test:canon`) — **57/57** проходят.
-- Сборка (`npm run build`) успешна.
-- CI: пороги покрытия снижены до текущих уровней (~64%), audit уровень moderate (2 moderate в build-tools; production чист).
-- npm audit --omit=dev: 2 moderate (minimatch/glob в транзитивных зависимостях сборки).
+- Typecheck (`tsc --noEmit`) проходит. Lint: **0 errors, 0 warnings**.
+- Канон-тесты (`npm run test:canon`) — **33/33 проходят**.
+- Уязвимости в better-auth закрыты обновлением до 1.7.14 (0 vulnerabilities).
 
-**Последняя проверка (19.11.2026):** typecheck, lint (0/0), test:canon 57/57 подтверждены. Unused import устранён.
+**Последняя проверка (16.11.2026):** typecheck успешен, test:canon 33/33. npm audit в этом спринте не пересматривался.
 
 ## Скачать
 
@@ -63,7 +60,7 @@ State = deriveState(History)
 npm install --legacy-peer-deps
 npm run restore:store
 npm run dev
-npm run test:canon   # канон-тесты
+npm run test:canon   # 33 теста
 ```
 
 ## Сборки

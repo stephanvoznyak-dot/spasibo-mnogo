@@ -1,7 +1,7 @@
 # PROTOCOL.md — Normal Project / Personal Ledger
 
 Версия протокола: **1**  
-Версия приложения: **1.3.17**
+Версия приложения: **1.3.18**
 
 Репозиторий: [https://github.com/stephanvoznyak-dot/spasibo-mnogo](https://github.com/stephanvoznyak-dot/spasibo-mnogo)  
 Канал: [https://t.me/+buaSHWKuVTY2ZmNi](https://t.me/+buaSHWKuVTY2ZmNi)  

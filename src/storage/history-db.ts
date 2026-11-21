@@ -262,11 +262,19 @@ export async function appendHistoryEvent(ev: HistoryEvent): Promise<{ seq: numbe
       return { seq: Math.max(0, current.length - 1), added: false };
     }
 
-    const seq = current.length;
-    store.put(eventToStored(accepted.history[accepted.history.length - 1]!, seq));
-    tx.objectStore("meta").put({ length: seq + 1, updatedAt: Date.now() }, "history");
+    const fresh = accepted.history.slice(parsed.length);
+    if (fresh.length === 0) {
+      await txDone(tx);
+      return { seq: Math.max(0, current.length - 1), added: false };
+    }
+    let seq = current.reduce((max, row) => Math.max(max, row.seq), -1) + 1;
+    for (const event of fresh) {
+      store.put(eventToStored(event, seq));
+      seq += 1;
+    }
+    tx.objectStore("meta").put({ length: seq, updatedAt: Date.now() }, "history");
     await txDone(tx);
-    return { seq, added: true };
+    return { seq: seq - 1, added: true };
   } finally {
     db.close();
   }

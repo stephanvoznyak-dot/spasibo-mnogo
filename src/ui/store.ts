@@ -424,6 +424,7 @@ export const useApp = create<AppState>((set, get) => ({
       window.clearInterval(swarmTimer);
       swarmTimer = null;
     }
+    get().identity?.secretKey?.fill(0);
     await wipeUserData();
     try {
       await saveHistory([]);
@@ -582,10 +583,7 @@ export const useApp = create<AppState>((set, get) => ({
     if (!identity) return;
     const blob = await loadMeta<EncryptedBlob>(PIN_META_KEY);
     if (!blob) throw new Error("Сначала задайте PIN в настройках");
-    // Re-seal current mnemonic if available
-    if (identity.mnemonic) {
-      // keep existing blob; mnemonic already sealed when setPin was called
-    }
+    identity.secretKey?.fill(0);
     set({
       identity: {
         ...identity,
