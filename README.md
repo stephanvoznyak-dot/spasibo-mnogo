@@ -18,11 +18,11 @@
 - Основной промышленный образец концепта Normal Project в стеке Vite + React + Capacitor.
 - Протокол реализован: BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR-обмен.
 - Связан с нативным Android-прототипом в репозитории [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и формализациями на Lean 4 ([lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants)).
-- Typecheck (`tsc --noEmit`) проходит. Lint: **0 errors, 0 warnings**.
-- Канон-тесты (`npm run test:canon`) — **33/33 проходят**.
-- Уязвимости в better-auth закрыты обновлением до 1.7.14 (0 vulnerabilities).
+- Typecheck (`tsc --noEmit`) проходит без ошибок.
+- Канон-тесты протокола и storage — **38/38** (21.11.2026).
+- npm audit в этом шаге не закрывался: в документации релиза 19.11 оставались 2 moderate в инструментах сборки.
 
-**Последняя проверка (16.11.2026):** typecheck успешен, test:canon 33/33. npm audit в этом спринте не пересматривался.
+**Последняя проверка (21.11.2026):** typecheck успешен, canon-тесты 38/38. Новый дефект записи History исправлен. Это не приёмка v1.4.0.
 
 ## Скачать
 
@@ -60,7 +60,7 @@ State = deriveState(History)
 npm install --legacy-peer-deps
 npm run restore:store
 npm run dev
-npm run test:canon   # 33 теста
+npm run test:canon   # 38 тестов протокола и storage
 ```
 
 ## Сборки
