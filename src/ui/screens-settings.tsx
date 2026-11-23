@@ -4,8 +4,7 @@ import { Input } from "@/components/ui/input";
 import { APP_PRODUCT, APP_VERSION, AUTHOR, CHANNEL, REPO } from "@/version";
 import { DownloadButtons } from "./downloads";
 import { useApp } from "./store";
-import { Panel } from "./screens-helpers";
-import { useT } from "./screens-hooks";
+import { Panel, useT } from "./screens-helpers";
 
 export function SettingsScreen() {
   const tr = useT();
@@ -27,6 +26,8 @@ export function SettingsScreen() {
   const [pin, setPinVal] = useState("");
   const [pin2, setPin2] = useState("");
   const [hasPin, setHasPin] = useState(false);
+  const [backup, setBackup] = useState("");
+  const [backupNote, setBackupNote] = useState("");
 
   useEffect(() => {
     void pinConfigured().then(setHasPin).catch(() => setHasPin(false));
@@ -171,26 +172,49 @@ export function SettingsScreen() {
         </div>
       </Panel>
 
+      <Panel>
+        <p className="text-xs uppercase text-muted">{tr("backupTitle")}</p>
+        <p className="mt-1 text-xs text-muted">{tr("backupHint")}</p>
+        <textarea
+          className="mt-3 min-h-28 w-full rounded-md border border-border bg-surface px-3 py-2 font-mono text-xs text-fg"
+          value={backup}
+          spellCheck={false}
+          onChange={(e) => setBackup(e.target.value)}
+        />
+        {backupNote && <p className="mt-2 text-xs text-muted">{backupNote}</p>}
+        <div className="mt-3 flex flex-col gap-2">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              void exportJson()
+                .then((json) => {
+                  setBackup(json);
+                  setBackupNote(tr("exportReady"));
+                })
+                .catch((err: unknown) => setError(err instanceof Error ? err.message : "Экспорт"));
+            }}
+          >
+            {tr("exportLedger")}
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              if (!backup.trim()) {
+                setError("Вставьте файл журнала в поле");
+                return;
+              }
+              if (!window.confirm(tr("importReplace"))) return;
+              void importJson(backup)
+                .then(() => setBackupNote(tr("importOk")))
+                .catch((err: unknown) => setError(err instanceof Error ? err.message : "Импорт"));
+            }}
+          >
+            {tr("importLedger")}
+          </Button>
+        </div>
+      </Panel>
+
       <div className="flex flex-col gap-2">
-        <Button
-          variant="secondary"
-          onClick={() => {
-            void exportJson().then((json) => {
-              void navigator.clipboard.writeText(json);
-            });
-          }}
-        >
-          {tr("exportLedger")}
-        </Button>
-        <Button
-          variant="secondary"
-          onClick={() => {
-            const raw = window.prompt("JSON");
-            if (raw) void importJson(raw);
-          }}
-        >
-          {tr("importLedger")}
-        </Button>
         <Button
           variant="secondary"
           onClick={() => {

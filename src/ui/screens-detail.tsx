@@ -1,10 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { bytesToHex } from "@/crypto/bytes";
 import { encodeQrMessage } from "@/protocol/qr-messages";
-import { describeAct } from "@/protocol/act";
-import { useApp } from "./store";
-import { Mono, Panel } from "./screens-helpers";
-import { usePartyName, useT } from "./screens-hooks";
+import { describeAct, useApp } from "./store";
+import { Mono, Panel, usePartyName, useT } from "./screens-helpers";
 
 export function DetailScreen() {
   const tr = useT();
@@ -41,6 +39,22 @@ export function DetailScreen() {
         <p className="font-mono text-lg">{d.amount}</p>
         <p className="mt-2 text-xs uppercase text-muted">{tr("remaining")}</p>
         <p className="font-mono text-lg">{entry.remainingAmount}</p>
+        <p className="mt-2 text-xs uppercase text-muted">
+          {tr(
+            entry.status === "pending_m2"
+              ? "pending"
+              : entry.status === "partially_cleared"
+                ? "partial"
+                : entry.status === "cleared"
+                  ? "cleared"
+                  : entry.status === "archived"
+                    ? "archived"
+                    : "finalized",
+          )}
+        </p>
+        {(entry.status === "partially_cleared" || entry.status === "cleared") && (
+          <p className="mt-1 text-xs text-muted">{tr("clearingLocalHint")}</p>
+        )}
         {d.note && (
           <>
             <p className="mt-2 text-xs uppercase text-muted">{tr("note")}</p>

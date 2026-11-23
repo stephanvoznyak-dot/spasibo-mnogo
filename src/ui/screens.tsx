@@ -63,6 +63,7 @@ export function Shell() {
           </div>
         )}
       </header>
+      {identity.locked && <p className="bg-surface px-4 py-2 text-sm text-muted">{tr("sessionLocked")}</p>}
       {error && <p className="bg-danger/15 px-4 py-2 text-sm text-danger">{error}</p>}
       <main className="flex-1 overflow-y-auto px-4 py-4 pb-24">
         {screen === "home" && <HomeScreen />}

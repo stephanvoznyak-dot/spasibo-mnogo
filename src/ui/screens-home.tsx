@@ -2,10 +2,8 @@ import { useState } from "react";
 import { Camera, Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { APP_VERSION } from "@/version";
-import { counterparties } from "@/protocol/graph";
-import { useApp } from "./store";
-import { Mono, Panel } from "./screens-helpers";
-import { copyText, usePartyName, useT } from "./screens-hooks";
+import { counterparties, useApp } from "./store";
+import { Mono, Panel, copyText, usePartyName, useT } from "./screens-helpers";
 import { DownloadPanel } from "./downloads";
 
 export function HomeScreen() {
@@ -78,6 +76,7 @@ export function HomeScreen() {
           ))}
         </ul>
       )}
+      <p className="text-[11px] text-subtle">{tr("balanceLocal")}</p>
       <p className="text-[11px] text-subtle">
         {tr("swarm")}: {swarmEvent} · v{APP_VERSION}
       </p>
