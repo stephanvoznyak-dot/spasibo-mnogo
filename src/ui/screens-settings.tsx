@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import { APP_PRODUCT, APP_VERSION, AUTHOR, CHANNEL, REPO } from "@/version";
 import { DownloadButtons } from "./downloads";
 import { useApp } from "./store";
-import { Panel, useT } from "./screens-helpers";
+import { Panel } from "./screens-helpers";
+import { useT } from "./screens-hooks";
 
 export function SettingsScreen() {
   const tr = useT();
