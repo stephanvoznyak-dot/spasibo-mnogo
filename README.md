@@ -11,18 +11,18 @@
 Канал: [t.me/+buaSHWKuVTY2ZmNi](https://t.me/+buaSHWKuVTY2ZmNi)  
 Автор концепции: **Ларионов Пётр** · +7 903 606-00-06 · [@Peterlarionov](https://t.me/Peterlarionov)
 
-Версия **1.3.19** (23 ноября 2026).
+Версия **1.3.20** (24 ноября 2026).
 
 ## Состояние проекта
 
 - Основной промышленный образец концепта Normal Project в стеке Vite + React + Capacitor.
 - Протокол реализован: BIP-39 → Ed25519, акты M1/M2, локальный клиринг циклов, офлайн QR-обмен.
 - Связан с нативным Android-прототипом в репозитории [NormalProject](https://github.com/stephanvoznyak-dot/NormalProject) и формализациями на Lean 4 ([lean4-token-units-invariants](https://github.com/stephanvoznyak-dot/lean4-token-units-invariants)).
-- Typecheck (`tsc --noEmit`) проходит без ошибок.
-- Канон-тесты протокола, storage, PIN и роя — **63/63** (21.11.2026).
-- npm audit в этом шаге не закрывался: в документации релиза 19.11 оставались 2 moderate в инструментах сборки.
+- Typecheck (`tsc --noEmit`) проходит без ошибок (24.11.2026).
+- Канон-тесты протокола, storage, PIN и роя — **63/63** (21.11.2026; протокол в 1.3.20 не менялся).
+- `npm audit` по рабочим зависимостям — **0** (24.11.2026). Закрыты critical/high в better-auth, vite и zod.
 
-**Последняя проверка (21.11.2026):** typecheck успешен, canon-тесты 63/63. Новый дефект записи History исправлен. Это не приёмка v1.4.0.
+**Последняя проверка (24.11.2026):** typecheck успешен, уязвимости зависимостей закрыты. Это не приёмка v1.4.0.
 
 ## Скачать
 
