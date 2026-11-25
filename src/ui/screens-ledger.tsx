@@ -1,7 +1,6 @@
 import { bytesToHex } from "@/crypto/bytes";
 import { useApp } from "./store";
-import { Panel } from "./screens-helpers";
-import { usePartyName, useT } from "./screens-hooks";
+import { Panel, usePartyName, useT } from "./screens-helpers";
 
 export function LedgerScreen() {
   const tr = useT();
@@ -35,6 +34,9 @@ export function LedgerScreen() {
                       ? ` / ${e.act.amount}`
                       : ""}
                   </p>
+                  {e.status === "pending_m2" && (
+                    <p className="mt-1 text-[11px] text-subtle">{tr("pendingNotCounted")}</p>
+                  )}
                 </Panel>
               </button>
             </li>

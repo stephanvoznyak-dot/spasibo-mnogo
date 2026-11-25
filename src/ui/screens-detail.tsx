@@ -38,8 +38,14 @@ export function DetailScreen() {
         <p className="text-sm">{nameOf(d.toHex)}</p>
         <p className="mt-2 text-xs uppercase text-muted">{tr("amount")}</p>
         <p className="font-mono text-lg">{d.amount}</p>
-        <p className="mt-2 text-xs uppercase text-muted">{tr("remaining")}</p>
-        <p className="font-mono text-lg">{entry.remainingAmount}</p>
+        {entry.status === "pending_m2" ? (
+          <p className="mt-2 text-xs text-muted">{tr("pendingNotCounted")}</p>
+        ) : (
+          <>
+            <p className="mt-2 text-xs uppercase text-muted">{tr("remaining")}</p>
+            <p className="font-mono text-lg">{entry.remainingAmount}</p>
+          </>
+        )}
         <p className="mt-2 text-xs uppercase text-muted">
           {tr(
             entry.status === "pending_m2"
