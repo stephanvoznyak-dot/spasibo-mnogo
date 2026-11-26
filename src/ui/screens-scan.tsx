@@ -102,7 +102,7 @@ export function ScanScreen() {
           {tr("scanPhoto")}
         </Button>
         <Button variant="secondary" onClick={() => fileRef.current?.click()}>
-          {tr("scanPhoto")}
+          {tr("scanFile")}
         </Button>
         <input
           ref={fileRef}

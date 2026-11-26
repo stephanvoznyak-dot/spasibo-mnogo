@@ -411,10 +411,13 @@ export const useApp = create<AppState>((set, get) => ({
       return;
     }
     const imported = await importLedgerJson(json);
+    if (imported.length === 0) throw new Error("В файле нет ни одного акта");
     const history = historyFromActs(imported.map((e) => e.act));
     await saveHistory(history);
-    if (DUAL_WRITE_LEGACY) await putActs(imported);
-    set({ entries: imported, history });
+    const { deriveState } = await import("@/protocol/derive");
+    const entries = stateToEntries(deriveState(history));
+    if (DUAL_WRITE_LEGACY) await putActs(entries);
+    set({ entries, history });
   },
 
   wipe: async () => {
